@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Donations Admin - Atlanta City Council</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+        }
+
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+
+        header {
+            background: #2c3e50;
+            color: white;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+        }
+
+        h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+
+        .back-link {
+            color: #bdc3c7;
+            text-decoration: none;
+            display: inline-block;
+            margin-bottom: 0.5rem;
+        }
+        .back-link:hover { color: white; }
+
+        .subtitle { color: #bdc3c7; font-size: 1rem; }
+
+        /* Filters */
+        .filters {
+            background: white;
+            padding: 1.25rem 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 1rem;
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .filters label { font-weight: 600; color: #555; white-space: nowrap; }
+
+        .filters select, .filters input[type="text"] {
+            padding: 0.5rem 0.75rem;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.95rem;
+            background: white;
+        }
+        .filters select:focus, .filters input[type="text"]:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        .filter-search { flex: 1; min-width: 180px; }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+        .btn-primary { background: #3498db; color: white; }
+        .btn-primary:hover { background: #2980b9; }
+        .btn-danger  { background: #e74c3c; color: white; }
+        .btn-danger:hover  { background: #c0392b; }
+        .btn-success { background: #27ae60; color: white; }
+        .btn-success:hover { background: #219a52; }
+        .btn-secondary { background: #95a5a6; color: white; }
+        .btn-secondary:hover { background: #7f8c8d; }
+        .btn-sm { padding: 0.3rem 0.7rem; font-size: 0.82rem; }
+
+        /* Stats bar */
+        .stats-bar {
+            background: white;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 1rem;
+            display: flex;
+            gap: 2rem;
+            flex-wrap: wrap;
+        }
+        .stat-item { display: flex; flex-direction: column; }
+        .stat-value { font-size: 1.4rem; font-weight: 700; color: #2c3e50; }
+        .stat-label { font-size: 0.8rem; color: #7f8c8d; text-transform: uppercase; letter-spacing: 0.05em; }
+
+        /* Table */
+        .table-wrap {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        table { width: 100%; border-collapse: collapse; }
+
+        thead th {
+            background: #2c3e50;
+            color: white;
+            padding: 0.75rem 1rem;
+            text-align: left;
+            font-size: 0.85rem;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            white-space: nowrap;
+        }
+
+        thead th.sortable { cursor: pointer; user-select: none; }
+        thead th.sortable:hover { background: #34495e; }
+        thead th .sort-arrow { margin-left: 4px; opacity: 0.5; }
+        thead th.sort-asc .sort-arrow::after  { content: '▲'; opacity: 1; }
+        thead th.sort-desc .sort-arrow::after { content: '▼'; opacity: 1; }
+        thead th:not([class*="sort-"]) .sort-arrow::after { content: '⇅'; }
+
+        tbody tr { border-bottom: 1px solid #f0f0f0; }
+        tbody tr:hover { background: #fafafa; }
+        tbody tr.excluded-row { opacity: 0.5; background: #fff8f8; }
+        tbody tr.expanded-row { background: #f0f7ff; }
+        tbody tr.edit-row td { padding: 0; }
+
+        td { padding: 0.65rem 1rem; font-size: 0.9rem; vertical-align: middle; }
+
+        .badge {
+            display: inline-block;
+            padding: 0.2rem 0.6rem;
+            border-radius: 12px;
+            font-size: 0.78rem;
+            font-weight: 600;
+        }
+        .badge-accepted { background: #d5f5e3; color: #1e8449; }
+        .badge-made     { background: #d6eaf8; color: #1a5276; }
+        .badge-excluded { background: #fadbd8; color: #922b21; }
+
+        .leg-link { color: #3498db; text-decoration: none; font-size: 0.85rem; }
+        .leg-link:hover { text-decoration: underline; }
+
+        .desc-cell {
+            max-width: 300px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-size: 0.82rem;
+            color: #666;
+        }
+
+        .amount-cell { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+        /* Inline edit panel */
+        .edit-panel {
+            padding: 1.25rem 1.5rem;
+            background: #eaf4fb;
+            border-top: 2px solid #3498db;
+        }
+
+        .edit-panel h4 {
+            margin-bottom: 1rem;
+            color: #2c3e50;
+            font-size: 1rem;
+        }
+
+        .edit-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .edit-field { display: flex; flex-direction: column; gap: 0.25rem; }
+        .edit-field label { font-size: 0.8rem; font-weight: 600; color: #555; }
+        .edit-field input, .edit-field select, .edit-field textarea {
+            padding: 0.5rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            font-family: inherit;
+        }
+        .edit-field input:focus, .edit-field select:focus, .edit-field textarea:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        .edit-desc-field { grid-column: 1 / -1; }
+        .edit-desc-field textarea { width: 100%; min-height: 80px; resize: vertical; font-size: 0.82rem; color: #555; }
+
+        .edit-actions { display: flex; gap: 0.5rem; align-items: center; }
+        .save-status { font-size: 0.85rem; color: #27ae60; font-weight: 600; }
+        .save-error  { font-size: 0.85rem; color: #e74c3c; font-weight: 600; }
+
+        /* Pagination */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 1.5rem 0;
+            flex-wrap: wrap;
+        }
+
+        .page-btn {
+            padding: 0.4rem 0.8rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+            background: white;
+            font-size: 0.9rem;
+            transition: all 0.15s;
+        }
+        .page-btn:hover { background: #f0f0f0; }
+        .page-btn.active { background: #3498db; color: white; border-color: #3498db; }
+        .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        .page-info { color: #7f8c8d; font-size: 0.9rem; }
+
+        /* Loading */
+        .loading { text-align: center; padding: 3rem; color: #7f8c8d; font-size: 1.1rem; }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <a href="/" class="back-link">← Back to Home</a>
+            <h1>Donations Admin</h1>
+            <p class="subtitle">Review and correct parsed donation data</p>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Filters -->
+        <div class="filters">
+            <label>Direction:</label>
+            <select id="filterDirection" onchange="applyFilters()">
+                <option value="">All</option>
+                <option value="accepted">Accepted</option>
+                <option value="made">Made</option>
+            </select>
+
+            <label>Type:</label>
+            <select id="filterType" onchange="applyFilters()">
+                <option value="">All</option>
+                <option value="monetary">Monetary</option>
+                <option value="in_kind">In-Kind</option>
+            </select>
+
+            <label>Donor / Recipient:</label>
+            <input type="text" id="filterParty" class="filter-search" placeholder="Search donor or recipient name…" oninput="applyFilters()">
+
+            <label>Year:</label>
+            <input type="text" id="filterYear" style="width: 80px;" placeholder="e.g. 2020" oninput="applyFilters()">
+
+            <label>
+                <input type="checkbox" id="showExcluded" onchange="applyFilters()"> Show excluded
+            </label>
+
+            <label>
+                <input type="checkbox" id="hideNoAmount" onchange="applyFilters()"> Has amount only
+            </label>
+
+            <button class="btn btn-secondary btn-sm" onclick="resetFilters()">Reset</button>
+        </div>
+
+        <!-- Stats bar -->
+        <div class="stats-bar" id="statsBar">
+            <div class="stat-item">
+                <span class="stat-value" id="statTotal">—</span>
+                <span class="stat-label">Showing</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value" id="statAccepted">—</span>
+                <span class="stat-label">Accepted</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value" id="statMade">—</span>
+                <span class="stat-label">Made</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value" id="statExcluded">—</span>
+                <span class="stat-label">Excluded</span>
+            </div>
+        </div>
+
+        <!-- Table -->
+        <div class="table-wrap">
+            <table id="donationsTable">
+                <thead>
+                    <tr>
+                        <th class="sortable" data-col="legislation_date">Date <span class="sort-arrow"></span></th>
+                        <th>Number</th>
+                        <th class="sortable" data-col="donation_direction">Direction <span class="sort-arrow"></span></th>
+                        <th class="sortable" data-col="amount">Amount <span class="sort-arrow"></span></th>
+                        <th class="sortable" data-col="donor">Donor <span class="sort-arrow"></span></th>
+                        <th class="sortable" data-col="recipient">Recipient <span class="sort-arrow"></span></th>
+                        <th>Description</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <tr><td colspan="8" class="loading">Loading donations…</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="pagination" id="pagination"></div>
+    </div>
+
+    <script>
+        let allDonations  = [];
+        let filtered      = [];
+        let currentPage   = 1;
+        const PAGE_SIZE   = 50;
+        let sortCol       = 'legislation_date';
+        let sortDir       = 'desc';
+        let openEditId    = null;
+
+        // ── Bootstrap ─────────────────────────────────────────────────────────
+        fetch('/api/donations')
+            .then(r => r.json())
+            .then(data => {
+                allDonations = data.donations || [];
+                applyFilters();
+                setupSortHeaders();
+            })
+            .catch(() => {
+                document.getElementById('tableBody').innerHTML =
+                    '<tr><td colspan="8" class="loading">Error loading donations</td></tr>';
+            });
+
+        // ── Sorting ───────────────────────────────────────────────────────────
+        function setupSortHeaders() {
+            document.querySelectorAll('thead th.sortable').forEach(th => {
+                th.addEventListener('click', () => {
+                    const col = th.dataset.col;
+                    if (sortCol === col) {
+                        sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+                    } else {
+                        sortCol = col;
+                        sortDir = col === 'amount' ? 'desc' : 'asc';
+                    }
+                    document.querySelectorAll('thead th').forEach(h => {
+                        h.classList.remove('sort-asc', 'sort-desc');
+                    });
+                    th.classList.add(sortDir === 'asc' ? 'sort-asc' : 'sort-desc');
+                    currentPage = 1;
+                    render();
+                });
+            });
+            // Set initial sort indicator
+            const th = document.querySelector(`thead th[data-col="${sortCol}"]`);
+            if (th) th.classList.add('sort-desc');
+        }
+
+        // ── Filters ───────────────────────────────────────────────────────────
+        function applyFilters() {
+            const dir        = document.getElementById('filterDirection').value;
+            const dtype      = document.getElementById('filterType').value;
+            const party      = document.getElementById('filterParty').value.toLowerCase().trim();
+            const year       = document.getElementById('filterYear').value.trim();
+            const showExcl   = document.getElementById('showExcluded').checked;
+            const hasAmount  = document.getElementById('hideNoAmount').checked;
+
+            filtered = allDonations.filter(d => {
+                if (!showExcl && d.excluded) return false;
+                if (dir   && d.donation_direction !== dir)   return false;
+                if (dtype && d.donation_type      !== dtype) return false;
+                if (party) {
+                    const donor = (d.donor || '').toLowerCase();
+                    const recip = (d.recipient || '').toLowerCase();
+                    if (!donor.includes(party) && !recip.includes(party)) return false;
+                }
+                if (year && !(d.legislation_date || '').startsWith(year)) return false;
+                if (hasAmount && !d.amount) return false;
+                return true;
+            });
+
+            updateStats();
+            currentPage = 1;
+            render();
+        }
+
+        function resetFilters() {
+            document.getElementById('filterDirection').value = '';
+            document.getElementById('filterType').value = '';
+            document.getElementById('filterParty').value = '';
+            document.getElementById('filterYear').value = '';
+            document.getElementById('showExcluded').checked = false;
+            document.getElementById('hideNoAmount').checked = false;
+            applyFilters();
+        }
+
+        function updateStats() {
+            document.getElementById('statTotal').textContent    = filtered.length.toLocaleString();
+            document.getElementById('statAccepted').textContent = filtered.filter(d => d.donation_direction === 'accepted').length.toLocaleString();
+            document.getElementById('statMade').textContent     = filtered.filter(d => d.donation_direction === 'made').length.toLocaleString();
+            document.getElementById('statExcluded').textContent = allDonations.filter(d => d.excluded).length.toLocaleString();
+        }
+
+        // ── Render ────────────────────────────────────────────────────────────
+        function render() {
+            // Sort
+            const sorted = [...filtered].sort((a, b) => {
+                let va = a[sortCol], vb = b[sortCol];
+                if (va === null || va === undefined) va = '';
+                if (vb === null || vb === undefined) vb = '';
+                if (typeof va === 'number' && typeof vb === 'number') {
+                    return sortDir === 'asc' ? va - vb : vb - va;
+                }
+                va = String(va); vb = String(vb);
+                return sortDir === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va);
+            });
+
+            // Paginate
+            const total = sorted.length;
+            const pages = Math.ceil(total / PAGE_SIZE) || 1;
+            if (currentPage > pages) currentPage = pages;
+            const start = (currentPage - 1) * PAGE_SIZE;
+            const page  = sorted.slice(start, start + PAGE_SIZE);
+
+            // Rows
+            const tbody = document.getElementById('tableBody');
+            if (page.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="loading">No donations match the current filters.</td></tr>';
+                renderPagination(0, 0);
+                return;
+            }
+
+            let html = '';
+            page.forEach(d => {
+                const isExcl  = !!d.excluded;
+                const rowCls  = isExcl ? 'excluded-row' : '';
+                const dirBadge = isExcl
+                    ? '<span class="badge badge-excluded">excluded</span>'
+                    : d.donation_direction === 'accepted'
+                        ? '<span class="badge badge-accepted">accepted</span>'
+                        : '<span class="badge badge-made">made</span>';
+
+                const legUrl = d.meeting_doc_id
+                    ? `/legislation/${d.meeting_doc_id}`
+                    : (d.id ? `/legislation/${d.id}?by=id` : null);
+                const numLink = legUrl
+                    ? `<a class="leg-link" href="${legUrl}" target="_blank">${esc(d.number || '')}</a>`
+                    : esc(d.number || '—');
+
+                const amt = d.amount != null
+                    ? '$' + Number(d.amount).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})
+                    : '<span style="color:#bbb">—</span>';
+
+                html += `
+                <tr class="${rowCls}" id="row-${d.id}">
+                    <td style="white-space:nowrap;">${esc(d.legislation_date || '')}</td>
+                    <td>${numLink}</td>
+                    <td>${dirBadge}</td>
+                    <td class="amount-cell">${amt}</td>
+                    <td>${esc(d.donor || '')}</td>
+                    <td>${esc(d.recipient || '')}</td>
+                    <td class="desc-cell" title="${esc(d.description || '')}">${esc(d.purpose || d.item_donated || '—')}</td>
+                    <td style="white-space:nowrap;">
+                        <button class="btn btn-primary btn-sm" onclick="toggleEdit(${d.id})">Edit</button>
+                    </td>
+                </tr>
+                <tr id="edit-row-${d.id}" style="display:none;">
+                    <td colspan="8" style="padding:0;">
+                        <div class="edit-panel" id="edit-panel-${d.id}">
+                            ${renderEditPanel(d)}
+                        </div>
+                    </td>
+                </tr>`;
+            });
+
+            tbody.innerHTML = html;
+            renderPagination(total, pages);
+        }
+
+        function renderEditPanel(d) {
+            const dirOptions = ['accepted', 'made'].map(v =>
+                `<option value="${v}" ${d.donation_direction === v ? 'selected' : ''}>${v}</option>`
+            ).join('');
+            const typeOptions = [['monetary','Monetary'],['in_kind','In-Kind']].map(([v,l]) =>
+                `<option value="${v}" ${d.donation_type === v ? 'selected' : ''}>${l}</option>`
+            ).join('');
+
+            return `
+            <h4>Editing: <strong>${esc(d.number || 'ID ' + d.id)}</strong>
+                &nbsp;<span style="font-weight:normal;color:#666;font-size:0.9rem;">${esc(d.legislation_date || '')}</span>
+            </h4>
+            <div class="edit-grid">
+                <div class="edit-field">
+                    <label>Direction</label>
+                    <select id="ef-dir-${d.id}">
+                        ${dirOptions}
+                    </select>
+                </div>
+                <div class="edit-field">
+                    <label>Type</label>
+                    <select id="ef-type-${d.id}">
+                        ${typeOptions}
+                    </select>
+                </div>
+                <div class="edit-field">
+                    <label>Amount ($)</label>
+                    <input type="text" id="ef-amount-${d.id}" value="${d.amount != null ? d.amount : ''}" placeholder="leave blank if none">
+                </div>
+                <div class="edit-field">
+                    <label>Donor</label>
+                    <input type="text" id="ef-donor-${d.id}" value="${esc(d.donor || '')}" placeholder="who donated to the City">
+                </div>
+                <div class="edit-field">
+                    <label>Recipient</label>
+                    <input type="text" id="ef-recipient-${d.id}" value="${esc(d.recipient || '')}" placeholder="who City donated to">
+                </div>
+                <div class="edit-field">
+                    <label>Item Donated</label>
+                    <input type="text" id="ef-item-${d.id}" value="${esc(d.item_donated || '')}" placeholder="for in-kind donations">
+                </div>
+                <div class="edit-field">
+                    <label>Purpose</label>
+                    <input type="text" id="ef-purpose-${d.id}" value="${esc(d.purpose || '')}" placeholder="what it was for">
+                </div>
+                <div class="edit-field">
+                    <label>Excluded (false positive)</label>
+                    <select id="ef-excluded-${d.id}">
+                        <option value="false" ${!d.excluded ? 'selected' : ''}>No — include in dataset</option>
+                        <option value="true"  ${d.excluded  ? 'selected' : ''}>Yes — exclude (false positive)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="edit-field edit-desc-field">
+                <label>Description (read-only reference)</label>
+                <textarea readonly>${esc(d.description || '')}</textarea>
+            </div>
+            <div class="edit-actions" style="margin-top:0.75rem;">
+                <button class="btn btn-success btn-sm" onclick="saveEdit(${d.id})">Save</button>
+                <button class="btn btn-secondary btn-sm" onclick="toggleEdit(${d.id})">Cancel</button>
+                <span id="ef-status-${d.id}"></span>
+            </div>`;
+        }
+
+        function renderPagination(total, pages) {
+            const pg = document.getElementById('pagination');
+            if (pages <= 1) { pg.innerHTML = ''; return; }
+
+            let html = `<button class="page-btn" onclick="goPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>&laquo; Prev</button>`;
+
+            // Show limited window of page buttons
+            const window_size = 5;
+            let start = Math.max(1, currentPage - Math.floor(window_size / 2));
+            let end   = Math.min(pages, start + window_size - 1);
+            if (end - start < window_size - 1) start = Math.max(1, end - window_size + 1);
+
+            if (start > 1) html += `<button class="page-btn" onclick="goPage(1)">1</button><span class="page-info">…</span>`;
+
+            for (let p = start; p <= end; p++) {
+                html += `<button class="page-btn ${p === currentPage ? 'active' : ''}" onclick="goPage(${p})">${p}</button>`;
+            }
+
+            if (end < pages) html += `<span class="page-info">…</span><button class="page-btn" onclick="goPage(${pages})">${pages}</button>`;
+
+            html += `<button class="page-btn" onclick="goPage(${currentPage + 1})" ${currentPage === pages ? 'disabled' : ''}>Next &raquo;</button>`;
+            html += `<span class="page-info">${((currentPage-1)*PAGE_SIZE+1).toLocaleString()}–${Math.min(currentPage*PAGE_SIZE, total).toLocaleString()} of ${total.toLocaleString()}</span>`;
+
+            pg.innerHTML = html;
+        }
+
+        function goPage(p) {
+            currentPage = p;
+            openEditId = null;
+            render();
+        }
+
+        // ── Edit ──────────────────────────────────────────────────────────────
+        function toggleEdit(id) {
+            const editRow = document.getElementById(`edit-row-${id}`);
+            if (!editRow) return;
+
+            const isOpen = editRow.style.display !== 'none';
+
+            // Close any currently open edit
+            if (openEditId && openEditId !== id) {
+                const prev = document.getElementById(`edit-row-${openEditId}`);
+                if (prev) prev.style.display = 'none';
+            }
+
+            editRow.style.display = isOpen ? 'none' : 'table-row';
+            openEditId = isOpen ? null : id;
+        }
+
+        function saveEdit(id) {
+            const statusEl = document.getElementById(`ef-status-${id}`);
+            statusEl.textContent = 'Saving…';
+            statusEl.className = 'save-status';
+
+            const payload = {
+                id,
+                donation_direction: document.getElementById(`ef-dir-${id}`).value,
+                donation_type: document.getElementById(`ef-type-${id}`).value,
+                amount:     document.getElementById(`ef-amount-${id}`).value.trim() || null,
+                donor:      document.getElementById(`ef-donor-${id}`).value.trim()  || null,
+                recipient:  document.getElementById(`ef-recipient-${id}`).value.trim() || null,
+                item_donated: document.getElementById(`ef-item-${id}`).value.trim()  || null,
+                purpose:    document.getElementById(`ef-purpose-${id}`).value.trim() || null,
+                excluded:   document.getElementById(`ef-excluded-${id}`).value === 'true',
+            };
+
+            fetch('/api/admin/donations/update', {
+                method:  'POST',
+                headers: {'Content-Type': 'application/json'},
+                body:    JSON.stringify(payload),
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    // Patch in-memory record
+                    const idx = allDonations.findIndex(d => d.id === id);
+                    if (idx !== -1) {
+                        Object.assign(allDonations[idx], {
+                            donation_direction: payload.donation_direction,
+                            donation_type: payload.donation_type,
+                            amount:      payload.amount ? parseFloat(String(payload.amount).replace(',', '')) : null,
+                            donor:       payload.donor,
+                            recipient:   payload.recipient,
+                            item_donated: payload.item_donated,
+                            purpose:     payload.purpose,
+                            excluded:    payload.excluded,
+                        });
+                    }
+                    statusEl.textContent = '✓ Saved';
+                    statusEl.className = 'save-status';
+                    // Re-render after a short delay so user can see success
+                    setTimeout(() => {
+                        applyFilters();
+                    }, 600);
+                } else {
+                    statusEl.textContent = `Error: ${data.error}`;
+                    statusEl.className = 'save-error';
+                }
+            })
+            .catch(err => {
+                statusEl.textContent = `Error: ${err.message}`;
+                statusEl.className = 'save-error';
+            });
+        }
+
+        // ── Utilities ─────────────────────────────────────────────────────────
+        function esc(text) {
+            const d = document.createElement('div');
+            d.textContent = String(text);
+            return d.innerHTML;
+        }
+    </script>
+</body>
+</html>

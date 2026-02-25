@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit News: {{ news.title }} - Admin</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: #e74c3c;
+            color: white;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+        }
+
+        .back-link {
+            color: #ecf0f1;
+            text-decoration: none;
+            display: inline-block;
+            margin-bottom: 0.5rem;
+        }
+
+        .back-link:hover {
+            color: white;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .card {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+        }
+
+        input[type="text"],
+        textarea {
+            width: 100%;
+            padding: 0.75rem;
+            font-size: 1rem;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            font-family: inherit;
+        }
+
+        input[type="text"]:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        textarea {
+            min-height: 400px;
+            font-family: monospace;
+            font-size: 0.9rem;
+        }
+
+        .help-text {
+            font-size: 0.85rem;
+            color: #7f8c8d;
+            margin-top: 0.25rem;
+        }
+
+        .btn {
+            padding: 0.75rem 2rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2980b9;
+        }
+
+        .btn-secondary {
+            background: #95a5a6;
+            color: white;
+            margin-left: 1rem;
+        }
+
+        .btn-secondary:hover {
+            background: #7f8c8d;
+        }
+
+        .info-box {
+            background: #e8f4f8;
+            border-left: 4px solid #3498db;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .info-box strong {
+            color: #2c3e50;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <a href="/admin/news" class="back-link">← Back to Admin</a>
+            <h1>Edit News Release</h1>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="info-box">
+            <strong>News ID:</strong> {{ news.id }}<br>
+            <strong>Original Date:</strong> {{ news.date }}<br>
+            <strong>Source URL:</strong> <a href="{{ news.url }}" target="_blank">{{ news.url }}</a>
+        </div>
+
+        <div class="card">
+            <form method="POST">
+                <div class="form-group">
+                    <label for="title">Title</label>
+                    <input type="text" id="title" name="title" value="{{ news.title }}" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Clean Text Content (Boilerplate Removed - Reference Only)</label>
+                    <textarea readonly style="min-height: 200px; background: #f8f9fa; cursor: default;">{{ news.editable_content }}</textarea>
+                    <div class="help-text">This is the content with header/footer boilerplate removed. For reference only - edit the HTML below.</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="content_html">Content (HTML)</label>
+                    <textarea id="content_html" name="content_html" required>{{ news.content_html }}</textarea>
+                    <div class="help-text">Edit the HTML content. Be careful to maintain proper HTML structure.</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="admin_notes">Admin Notes (Internal Only)</label>
+                    <textarea id="admin_notes" name="admin_notes" style="min-height: 100px;">{{ news.admin_notes or '' }}</textarea>
+                    <div class="help-text">Private notes about this news item. Not shown to public.</div>
+                </div>
+
+                <div>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                    <a href="/admin/news" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Preview -->
+        <div class="card">
+            <h2>Current Content Preview</h2>
+            <div style="border: 1px solid #ddd; padding: 1rem; margin-top: 1rem; background: #f8f9fa;">
+                {{ news.content_html|safe }}
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin: Manage News - Atlanta City Council</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: #e74c3c;
+            color: white;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+        }
+
+        .back-link {
+            color: #ecf0f1;
+            text-decoration: none;
+            display: inline-block;
+            margin-bottom: 0.5rem;
+        }
+
+        .back-link:hover {
+            color: white;
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            color: #ecf0f1;
+            font-size: 1rem;
+        }
+
+        .admin-table {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: #34495e;
+            color: white;
+        }
+
+        th {
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid #ecf0f1;
+        }
+
+        tbody tr:hover {
+            background: #f8f9fa;
+        }
+
+        .news-id {
+            font-weight: bold;
+            color: #3498db;
+        }
+
+        .news-title {
+            max-width: 400px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .news-date {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+            white-space: nowrap;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .status-visible {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-hidden {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s;
+        }
+
+        .btn-edit {
+            background: #3498db;
+            color: white;
+        }
+
+        .btn-edit:hover {
+            background: #2980b9;
+        }
+
+        .btn-hide {
+            background: #95a5a6;
+            color: white;
+            margin-left: 0.5rem;
+        }
+
+        .btn-hide:hover {
+            background: #7f8c8d;
+        }
+
+        .btn-show {
+            background: #27ae60;
+            color: white;
+            margin-left: 0.5rem;
+        }
+
+        .btn-show:hover {
+            background: #229954;
+        }
+
+        .actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            margin: 2rem 0;
+        }
+
+        .page-link {
+            padding: 0.5rem 1rem;
+            background: white;
+            color: #3498db;
+            text-decoration: none;
+            border-radius: 4px;
+            border: 2px solid #3498db;
+        }
+
+        .page-link:hover {
+            background: #3498db;
+            color: white;
+        }
+
+        .page-link.active {
+            background: #3498db;
+            color: white;
+        }
+
+        .admin-notes {
+            font-size: 0.85rem;
+            color: #7f8c8d;
+            font-style: italic;
+            margin-top: 0.25rem;
+        }
+
+        .filter-bar {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .filter-buttons {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 0.5rem 1rem;
+            border: 2px solid #3498db;
+            background: white;
+            color: #3498db;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+
+        .filter-btn:hover {
+            background: #3498db;
+            color: white;
+        }
+
+        .filter-btn.active {
+            background: #3498db;
+            color: white;
+        }
+
+        .sortable {
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+            padding-right: 1.5rem;
+        }
+
+        .sortable:hover {
+            background: #2c3e50;
+        }
+
+        .sort-arrow {
+            position: absolute;
+            right: 0.5rem;
+            font-size: 0.8rem;
+            opacity: 0.5;
+        }
+
+        .sort-arrow.active {
+            opacity: 1;
+        }
+
+        .type-select {
+            padding: 0.25rem 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+
+        .stats-row {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+            color: #7f8c8d;
+        }
+
+        .stats-row span {
+            font-weight: bold;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <a href="/news" class="back-link">← Back to News</a>
+            <h1>⚙️ Admin: Manage News</h1>
+            <p class="subtitle">Edit and hide news releases</p>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Filter Bar -->
+        <div class="filter-bar">
+            <div class="stats-row">
+                <div>Total: <span>{{ stats.total }}</span></div>
+                <div>News Releases: <span>{{ stats.news_releases }}</span></div>
+                <div>Media Advisories: <span>{{ stats.media_advisories }}</span></div>
+                <div>Unknown: <span>{{ stats.unknown }}</span></div>
+            </div>
+            <div class="filter-buttons">
+                <a href="/admin/news?sort_by={{ request.args.get('sort_by', 'id') }}&order={{ request.args.get('order', 'desc') }}"
+                   class="filter-btn {% if not request.args.get('type') %}active{% endif %}">
+                    All ({{ stats.total }})
+                </a>
+                <a href="/admin/news?type=News Release&sort_by={{ request.args.get('sort_by', 'id') }}&order={{ request.args.get('order', 'desc') }}"
+                   class="filter-btn {% if request.args.get('type') == 'News Release' %}active{% endif %}">
+                    📰 News Releases ({{ stats.news_releases }})
+                </a>
+                <a href="/admin/news?type=Media Advisory&sort_by={{ request.args.get('sort_by', 'id') }}&order={{ request.args.get('order', 'desc') }}"
+                   class="filter-btn {% if request.args.get('type') == 'Media Advisory' %}active{% endif %}">
+                    📢 Media Advisories ({{ stats.media_advisories }})
+                </a>
+                <a href="/admin/news?type=Unknown&sort_by={{ request.args.get('sort_by', 'id') }}&order={{ request.args.get('order', 'desc') }}"
+                   class="filter-btn {% if request.args.get('type') == 'Unknown' %}active{% endif %}">
+                    ❓ Unknown ({{ stats.unknown }})
+                </a>
+            </div>
+        </div>
+
+        <div class="admin-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th class="sortable" onclick="sortBy('id')">
+                            ID
+                            <span class="sort-arrow {% if request.args.get('sort_by', 'id') == 'id' %}active{% endif %}">
+                                {% if request.args.get('sort_by', 'id') == 'id' and request.args.get('order', 'desc') == 'desc' %}▼{% else %}▲{% endif %}
+                            </span>
+                        </th>
+                        <th class="sortable" onclick="sortBy('title')">
+                            Title
+                            <span class="sort-arrow {% if request.args.get('sort_by') == 'title' %}active{% endif %}">
+                                {% if request.args.get('sort_by') == 'title' and request.args.get('order', 'desc') == 'desc' %}▼{% else %}▲{% endif %}
+                            </span>
+                        </th>
+                        <th class="sortable" onclick="sortBy('type')">
+                            Type
+                            <span class="sort-arrow {% if request.args.get('sort_by') == 'type' %}active{% endif %}">
+                                {% if request.args.get('sort_by') == 'type' and request.args.get('order', 'desc') == 'desc' %}▼{% else %}▲{% endif %}
+                            </span>
+                        </th>
+                        <th class="sortable" onclick="sortBy('date')">
+                            Date
+                            <span class="sort-arrow {% if request.args.get('sort_by') == 'date' %}active{% endif %}">
+                                {% if request.args.get('sort_by') == 'date' and request.args.get('order', 'desc') == 'desc' %}▼{% else %}▲{% endif %}
+                            </span>
+                        </th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in news %}
+                    <tr>
+                        <td class="news-id">{{ item.id }}</td>
+                        <td>
+                            <div class="news-title">{{ item.title }}</div>
+                            {% if item.admin_notes %}
+                            <div class="admin-notes">📝 {{ item.admin_notes }}</div>
+                            {% endif %}
+                        </td>
+                        <td style="font-size: 0.85rem;">
+                            <select class="type-select" onchange="changeType({{ item.id }}, this.value)">
+                                <option value="News Release" {% if item.type == 'News Release' %}selected{% endif %}>📰 News Release</option>
+                                <option value="Media Advisory" {% if item.type == 'Media Advisory' %}selected{% endif %}>📢 Media Advisory</option>
+                                <option value="Unknown" {% if item.type == 'Unknown' or not item.type %}selected{% endif %}>❓ Unknown</option>
+                            </select>
+                        </td>
+                        <td class="news-date">{{ item.date }}</td>
+                        <td>
+                            {% if item.is_hidden %}
+                            <span class="status-badge status-hidden">Hidden</span>
+                            {% else %}
+                            <span class="status-badge status-visible">Visible</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="actions">
+                                <a href="/admin/news/{{ item.id }}/edit" class="btn btn-edit">Edit</a>
+                                <button class="btn {% if item.is_hidden %}btn-show{% else %}btn-hide{% endif %}"
+                                        onclick="toggleHidden({{ item.id }}, this)">
+                                    {% if item.is_hidden %}Show{% else %}Hide{% endif %}
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if total_pages > 1 %}
+        <div class="pagination">
+            {% if page > 1 %}
+            <a href="/admin/news?page={{ page - 1 }}&sort_by={{ request.args.get('sort_by', 'id') }}&order={{ request.args.get('order', 'desc') }}{% if request.args.get('type') %}&type={{ request.args.get('type') }}{% endif %}" class="page-link">← Previous</a>
+            {% endif %}
+
+            {% for p in range(1, total_pages + 1) %}
+                {% if p == page %}
+                <span class="page-link active">{{ p }}</span>
+                {% elif p == 1 or p == total_pages or (p >= page - 2 and p <= page + 2) %}
+                <a href="/admin/news?page={{ p }}&sort_by={{ request.args.get('sort_by', 'id') }}&order={{ request.args.get('order', 'desc') }}{% if request.args.get('type') %}&type={{ request.args.get('type') }}{% endif %}" class="page-link">{{ p }}</a>
+                {% elif p == page - 3 or p == page + 3 %}
+                <span class="page-link">...</span>
+                {% endif %}
+            {% endfor %}
+
+            {% if page < total_pages %}
+            <a href="/admin/news?page={{ page + 1 }}&sort_by={{ request.args.get('sort_by', 'id') }}&order={{ request.args.get('order', 'desc') }}{% if request.args.get('type') %}&type={{ request.args.get('type') }}{% endif %}" class="page-link">Next →</a>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <div style="text-align: center; margin-top: 2rem; padding: 2rem; border-top: 1px solid #ddd;">
+            <a href="/admin/logs" style="color: #7f8c8d; text-decoration: none; font-size: 0.9rem;">📋 View Error Logs</a>
+        </div>
+    </div>
+
+    <script>
+        function toggleHidden(newsId, button) {
+            fetch(`/admin/news/${newsId}/toggle-hidden`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Reload page to show updated status
+                    window.location.reload();
+                } else {
+                    alert('Error toggling hidden status: ' + (data.error || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                alert('Error: ' + error);
+            });
+        }
+
+        function sortBy(column) {
+            const urlParams = new URLSearchParams(window.location.search);
+            const currentSort = urlParams.get('sort_by') || 'id';
+            const currentOrder = urlParams.get('order') || 'desc';
+
+            // Toggle order if clicking same column, otherwise default to desc
+            let newOrder = 'desc';
+            if (currentSort === column) {
+                newOrder = currentOrder === 'desc' ? 'asc' : 'desc';
+            }
+
+            urlParams.set('sort_by', column);
+            urlParams.set('order', newOrder);
+            urlParams.set('page', '1'); // Reset to first page when sorting
+
+            window.location.search = urlParams.toString();
+        }
+
+        function changeType(newsId, newType) {
+            fetch(`/admin/news/${newsId}/change-type`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ type: newType })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Show brief success message without full reload
+                    const select = event.target;
+                    const originalBg = select.style.backgroundColor;
+                    select.style.backgroundColor = '#d4edda';
+                    setTimeout(() => {
+                        select.style.backgroundColor = originalBg;
+                    }, 500);
+                } else {
+                    alert('Error changing type: ' + (data.error || 'Unknown error'));
+                    // Reload to reset the dropdown
+                    window.location.reload();
+                }
+            })
+            .catch(error => {
+                alert('Error: ' + error);
+                window.location.reload();
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settlements &amp; Claims – Atlanta City Council</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+        }
+
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+
+        header {
+            background: #2c3e50;
+            color: white;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+        }
+
+        .back-link { color: #bdc3c7; text-decoration: none; display: inline-block; margin-bottom: 0.5rem; font-size: 0.9rem; }
+        .back-link:hover { color: white; }
+
+        h1 { font-size: 1.8rem; margin-bottom: 0.25rem; }
+        .subtitle { color: #bdc3c7; font-size: 0.95rem; }
+
+        /* Summary cards */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .summary-card {
+            background: white;
+            border-radius: 8px;
+            padding: 1.25rem 1.5rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+            border-left: 4px solid #e74c3c;
+        }
+
+        .summary-card.court { border-left-color: #8e44ad; }
+        .summary-card.total { border-left-color: #2c3e50; }
+
+        .summary-number {
+            font-size: 1.6rem;
+            font-weight: bold;
+            color: #2c3e50;
+            line-height: 1.2;
+        }
+
+        .summary-label { font-size: 0.8rem; color: #7f8c8d; margin-top: 0.2rem; }
+
+        /* Filters */
+        .filters {
+            background: white;
+            border-radius: 8px;
+            padding: 1.25rem 1.5rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+            margin-bottom: 1.5rem;
+        }
+
+        .filter-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            align-items: flex-end;
+        }
+
+        .filter-group { display: flex; flex-direction: column; gap: 0.25rem; }
+
+        .filter-group label { font-size: 0.8rem; font-weight: 600; color: #555; }
+
+        .filter-group select,
+        .filter-group input {
+            padding: 0.5rem 0.75rem;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            background: white;
+        }
+
+        .filter-group select:focus,
+        .filter-group input:focus { outline: none; border-color: #3498db; }
+
+        .btn {
+            padding: 0.5rem 1.25rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background 0.2s;
+        }
+
+        .btn-primary { background: #3498db; color: white; }
+        .btn-primary:hover { background: #2980b9; }
+
+        .btn-secondary { background: #95a5a6; color: white; }
+        .btn-secondary:hover { background: #7f8c8d; }
+
+        /* Results */
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .results-count { font-size: 0.9rem; color: #7f8c8d; }
+
+        /* Table */
+        .table-wrap {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+            overflow-x: auto;
+        }
+
+        table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+
+        th {
+            background: #f8f9fa;
+            padding: 0.75rem 1rem;
+            text-align: left;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #555;
+            border-bottom: 2px solid #dee2e6;
+            white-space: nowrap;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        th:hover { background: #e9ecef; }
+        th.sorted { color: #3498db; }
+
+        td {
+            padding: 0.7rem 1rem;
+            border-bottom: 1px solid #f0f0f0;
+            vertical-align: top;
+        }
+
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: #fafbfc; }
+
+        .badge {
+            display: inline-block;
+            padding: 0.15rem 0.5rem;
+            border-radius: 3px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        .badge-individual { background: #fde8e8; color: #c0392b; }
+        .badge-court { background: #ede7f6; color: #6a1b9a; }
+
+        .amount { font-weight: 600; color: #2c3e50; white-space: nowrap; }
+
+        td a { color: #3498db; text-decoration: none; }
+        td a:hover { text-decoration: underline; }
+
+        .loading { text-align: center; padding: 3rem; color: #7f8c8d; }
+        .no-results { text-align: center; padding: 3rem; color: #7f8c8d; }
+
+        .desc-cell {
+            max-width: 380px;
+            font-size: 0.8rem;
+            color: #555;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Pagination */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-top: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .page-btn {
+            padding: 0.4rem 0.75rem;
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+
+        .page-btn:hover { background: #3498db; color: white; border-color: #3498db; }
+        .page-btn.active { background: #3498db; color: white; border-color: #3498db; }
+        .page-btn:disabled { opacity: 0.4; cursor: default; }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <a href="/" class="back-link">← Back to Home</a>
+            <h1>⚖️ Settlements &amp; Claims</h1>
+            <p class="subtitle">City of Atlanta settled claims and court litigations</p>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Summary cards -->
+        <div class="summary-grid">
+            <div class="summary-card">
+                <div class="summary-number" id="s-ind-count">—</div>
+                <div class="summary-label">Individual Claims</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-number" id="s-ind-total">—</div>
+                <div class="summary-label">Individual Claims Total</div>
+            </div>
+            <div class="summary-card court">
+                <div class="summary-number" id="s-court-count">—</div>
+                <div class="summary-label">Court Litigations</div>
+            </div>
+            <div class="summary-card court">
+                <div class="summary-number" id="s-court-total">—</div>
+                <div class="summary-label">Court Litigations Total</div>
+            </div>
+            <div class="summary-card total">
+                <div class="summary-number" id="s-grand-total">—</div>
+                <div class="summary-label">Grand Total Paid</div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="filters">
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label>Category</label>
+                    <select id="f-category">
+                        <option value="">All</option>
+                        <option value="individual_claim">Individual Claims</option>
+                        <option value="court_litigation">Court Litigation</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Year From</label>
+                    <input type="number" id="f-year-from" placeholder="e.g. 2010" min="1984" max="2026" style="width:110px">
+                </div>
+                <div class="filter-group">
+                    <label>Year To</label>
+                    <input type="number" id="f-year-to" placeholder="e.g. 2023" min="1984" max="2026" style="width:110px">
+                </div>
+                <div class="filter-group">
+                    <label>Min Amount ($)</label>
+                    <input type="number" id="f-min-amount" placeholder="0" min="0" style="width:120px">
+                </div>
+                <div class="filter-group">
+                    <label>Max Amount ($)</label>
+                    <input type="number" id="f-max-amount" placeholder="any" min="0" style="width:120px">
+                </div>
+                <div class="filter-group">
+                    <label>&nbsp;</label>
+                    <button class="btn btn-primary" onclick="applyFilters()">Apply</button>
+                </div>
+                <div class="filter-group">
+                    <label>&nbsp;</label>
+                    <button class="btn btn-secondary" onclick="clearFilters()">Clear</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results -->
+        <div class="results-header">
+            <span class="results-count" id="results-count"></span>
+            <span class="results-count" id="filtered-total"></span>
+        </div>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th onclick="sortBy('legislation_date')">Date <span id="sort-legislation_date"></span></th>
+                        <th onclick="sortBy('number')">Number <span id="sort-number"></span></th>
+                        <th onclick="sortBy('settlement_category')">Type <span id="sort-settlement_category"></span></th>
+                        <th onclick="sortBy('amount')">Amount <span id="sort-amount"></span></th>
+                        <th onclick="sortBy('claimant_name')">Claimant / Plaintiff <span id="sort-claimant_name"></span></th>
+                        <th onclick="sortBy('damage_type')">Damage / Case <span id="sort-damage_type"></span></th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody id="table-body">
+                    <tr><td colspan="7" class="loading">Loading settlements…</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="pagination" id="pagination"></div>
+    </div>
+
+    <script>
+        let allData = [];
+        let filtered = [];
+        let sortCol = 'legislation_date';
+        let sortDir = -1; // -1 = desc
+        const PAGE_SIZE = 50;
+        let currentPage = 1;
+
+        const fmt = n => n != null ? '$' + Math.round(n).toLocaleString() : '—';
+
+        // Load summary
+        fetch('/api/settlements/summary')
+            .then(r => r.json())
+            .then(d => {
+                document.getElementById('s-ind-count').textContent   = d.individual_count.toLocaleString();
+                document.getElementById('s-ind-total').textContent   = fmt(d.individual_total);
+                document.getElementById('s-court-count').textContent = d.court_count.toLocaleString();
+                document.getElementById('s-court-total').textContent = fmt(d.court_total);
+                document.getElementById('s-grand-total').textContent = fmt(d.grand_total);
+            });
+
+        // Load all settlements once
+        fetch('/api/settlements')
+            .then(r => r.json())
+            .then(data => {
+                allData = data.settlements;
+                applyFilters();
+            })
+            .catch(() => {
+                document.getElementById('table-body').innerHTML =
+                    '<tr><td colspan="7" class="no-results">Error loading settlements.</td></tr>';
+            });
+
+        function applyFilters() {
+            const cat      = document.getElementById('f-category').value;
+            const yearFrom = document.getElementById('f-year-from').value;
+            const yearTo   = document.getElementById('f-year-to').value;
+            const minAmt   = parseFloat(document.getElementById('f-min-amount').value) || null;
+            const maxAmt   = parseFloat(document.getElementById('f-max-amount').value) || null;
+
+            filtered = allData.filter(s => {
+                if (cat && s.settlement_category !== cat) return false;
+                const yr = (s.legislation_date || '').slice(0, 4);
+                if (yearFrom && yr < yearFrom) return false;
+                if (yearTo   && yr > yearTo)   return false;
+                if (minAmt != null && (s.amount == null || s.amount < minAmt)) return false;
+                if (maxAmt != null && (s.amount == null || s.amount > maxAmt)) return false;
+                return true;
+            });
+
+            currentPage = 1;
+            doSort();
+        }
+
+        function clearFilters() {
+            document.getElementById('f-category').value   = '';
+            document.getElementById('f-year-from').value  = '';
+            document.getElementById('f-year-to').value    = '';
+            document.getElementById('f-min-amount').value = '';
+            document.getElementById('f-max-amount').value = '';
+            applyFilters();
+        }
+
+        function sortBy(col) {
+            if (sortCol === col) {
+                sortDir = -sortDir;
+            } else {
+                sortCol = col;
+                sortDir = col === 'amount' ? -1 : 1;
+            }
+            currentPage = 1;
+            doSort();
+        }
+
+        function doSort() {
+            filtered.sort((a, b) => {
+                let va = a[sortCol], vb = b[sortCol];
+                if (va == null) va = sortDir === 1 ? '\uffff' : '';
+                if (vb == null) vb = sortDir === 1 ? '\uffff' : '';
+                if (typeof va === 'number' && typeof vb === 'number') {
+                    return (va - vb) * sortDir;
+                }
+                return String(va).localeCompare(String(vb)) * sortDir;
+            });
+
+            // Update sort indicators
+            ['legislation_date','number','settlement_category','amount','claimant_name','damage_type'].forEach(col => {
+                const el = document.getElementById('sort-' + col);
+                if (el) el.textContent = col === sortCol ? (sortDir === 1 ? '▲' : '▼') : '';
+            });
+
+            renderPage();
+        }
+
+        function renderPage() {
+            const start = (currentPage - 1) * PAGE_SIZE;
+            const page  = filtered.slice(start, start + PAGE_SIZE);
+
+            const filteredTotal = filtered.filter(s => s.amount).reduce((sum, s) => sum + s.amount, 0);
+
+            document.getElementById('results-count').textContent =
+                filtered.length.toLocaleString() + ' settlements shown';
+            document.getElementById('filtered-total').textContent =
+                filtered.length > 0 ? 'Total: ' + fmt(filteredTotal) : '';
+
+            if (filtered.length === 0) {
+                document.getElementById('table-body').innerHTML =
+                    '<tr><td colspan="7" class="no-results">No results match your filters.</td></tr>';
+                document.getElementById('pagination').innerHTML = '';
+                return;
+            }
+
+            let rows = '';
+            page.forEach(s => {
+                const isInd  = s.settlement_category === 'individual_claim';
+                const badge  = isInd
+                    ? '<span class="badge badge-individual">Individual</span>'
+                    : '<span class="badge badge-court">Court</span>';
+
+                const who = isInd
+                    ? esc(s.claimant_name || '—')
+                    : esc(s.plaintiff || '—');
+
+                const what = isInd
+                    ? esc(s.damage_type || '—')
+                    : esc(s.case_number ? (s.case_number + (s.court ? ' · ' + s.court : '')) : (s.court || '—'));
+
+                // Use meetingDocId when available (route searches by it first).
+                // For old records with no meetingDocId, use internal id with ?by=id
+                // to prevent the route from accidentally matching a newer item's meetingDocId.
+                const legUrl = s.meeting_doc_id
+                    ? `/legislation/${s.meeting_doc_id}`
+                    : (s.id ? `/legislation/${s.id}?by=id` : null);
+                const numCell = s.number
+                    ? (legUrl
+                        ? `<a href="${legUrl}">${esc(s.number)}</a>`
+                        : esc(s.number))
+                    : '—';
+
+                const link = s.pdf_url
+                    ? `<a href="${esc(s.pdf_url)}" target="_blank" title="View PDF">PDF</a>`
+                    : '';
+
+                rows += `<tr>
+                    <td>${esc(s.legislation_date || '—')}</td>
+                    <td style="white-space:nowrap">${numCell}</td>
+                    <td>${badge}</td>
+                    <td class="amount">${s.amount != null ? fmt(s.amount) : '—'}</td>
+                    <td>${who}</td>
+                    <td>${what}</td>
+                    <td class="desc-cell" title="${esc(s.description || '')}">${esc((s.description || '').slice(0, 120))}${link ? ' ' + link : ''}</td>
+                </tr>`;
+            });
+
+            document.getElementById('table-body').innerHTML = rows;
+            renderPagination();
+        }
+
+        function renderPagination() {
+            const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+            if (totalPages <= 1) {
+                document.getElementById('pagination').innerHTML = '';
+                return;
+            }
+
+            let html = '';
+            const addBtn = (label, page, disabled, active) => {
+                html += `<button class="page-btn${active ? ' active' : ''}" ${disabled ? 'disabled' : ''}
+                    onclick="goToPage(${page})">${label}</button>`;
+            };
+
+            addBtn('«', 1, currentPage === 1, false);
+            addBtn('‹', currentPage - 1, currentPage === 1, false);
+
+            const start = Math.max(1, currentPage - 2);
+            const end   = Math.min(totalPages, currentPage + 2);
+            for (let p = start; p <= end; p++) {
+                addBtn(p, p, false, p === currentPage);
+            }
+
+            addBtn('›', currentPage + 1, currentPage === totalPages, false);
+            addBtn('»', totalPages, currentPage === totalPages, false);
+
+            document.getElementById('pagination').innerHTML = html;
+        }
+
+        function goToPage(p) {
+            currentPage = p;
+            renderPage();
+            window.scrollTo(0, 0);
+        }
+
+        function esc(str) {
+            const d = document.createElement('div');
+            d.textContent = str;
+            return d.innerHTML;
+        }
+    </script>
+</body>
+</html>

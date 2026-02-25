@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atlanta City Council Legislation Browser</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: #2c3e50;
+            color: white;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            color: #bdc3c7;
+            font-size: 1rem;
+        }
+
+        .search-container {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+
+        .search-box {
+            display: flex;
+            gap: 1rem;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 0.75rem;
+            font-size: 1rem;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        select {
+            padding: 0.75rem;
+            font-size: 1rem;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            background: white;
+        }
+
+        .advanced-toggle {
+            background: none;
+            border: none;
+            padding: 0;
+            color: #7f8c8d;
+            font-size: 0.8rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            margin-top: 0.5rem;
+            transition: color 0.15s;
+        }
+
+        .advanced-toggle:hover { color: #3498db; background: none; }
+
+        .advanced-toggle .chevron {
+            display: inline-block;
+            transition: transform 0.2s;
+        }
+
+        .advanced-toggle.open .chevron { transform: rotate(180deg); }
+
+        .advanced-panel {
+            display: none;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-top: 0.75rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid #f0f0f0;
+        }
+
+        .advanced-panel.open { display: flex; }
+
+        .advanced-panel label {
+            font-size: 0.85rem;
+            color: #7f8c8d;
+            white-space: nowrap;
+        }
+
+        .advanced-panel select,
+        .advanced-panel input[type="text"] {
+            padding: 0.5rem 0.6rem;
+            font-size: 0.9rem;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            background: white;
+        }
+
+        button {
+            padding: 0.75rem 2rem;
+            font-size: 1rem;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #2980b9;
+        }
+
+        .quick-links {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-decoration: none;
+            color: #333;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .card h3 {
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+        }
+
+        .card p {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+
+        .stats {
+            display: flex;
+            gap: 2rem;
+            justify-content: center;
+            margin: 2rem 0;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #3498db;
+        }
+
+        .stat-label {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+
+        #results {
+            margin-top: 2rem;
+        }
+
+        .result-item {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.75rem;
+        }
+
+        .result-number {
+            font-weight: bold;
+            color: #2c3e50;
+            font-size: 1.1rem;
+        }
+
+        .type-badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            background: #3498db;
+            color: white;
+            border-radius: 3px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            margin-left: 0.5rem;
+        }
+
+        .result-date {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+
+        .result-description {
+            color: #555;
+            line-height: 1.6;
+        }
+
+        .result-link {
+            display: inline-block;
+            margin-top: 0.5rem;
+            color: #3498db;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+
+        .result-link:hover {
+            text-decoration: underline;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #7f8c8d;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 3rem;
+            color: #7f8c8d;
+        }
+
+        .charter-amendment-note {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            background: #f39c12;
+            color: white;
+            border-radius: 3px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            margin-left: 0.5rem;
+        }
+
+        .claim-badge-adversed {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            background: #95a5a6;
+            color: white;
+            border-radius: 3px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            margin-left: 0.5rem;
+        }
+
+        .claim-badge-settlement {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            background: #e74c3c;
+            color: white;
+            border-radius: 3px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            margin-left: 0.5rem;
+        }
+
+        .settlement-card {
+            grid-column: 1 / -1;
+        }
+
+        .settlement-card h3 {
+            margin-bottom: 0.75rem;
+        }
+
+        .settlement-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+            margin-top: 0.75rem;
+        }
+
+        .settlement-stat {
+            background: #f8f9fa;
+            border-radius: 6px;
+            padding: 0.75rem 1rem;
+            border-left: 3px solid #e74c3c;
+        }
+
+        .settlement-stat.court {
+            border-left-color: #8e44ad;
+        }
+
+        .settlement-stat-number {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .settlement-stat-label {
+            font-size: 0.8rem;
+            color: #7f8c8d;
+            margin-top: 0.1rem;
+        }
+
+        .settlement-link {
+            display: inline-block;
+            margin-top: 0.75rem;
+            color: #e74c3c;
+            text-decoration: none;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .settlement-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>Atlanta City Council Legislation Browser</h1>
+            <p class="subtitle">Search and browse legislation from 1984 to present</p>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="search-container">
+            <h2>Search Legislation</h2>
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Enter search term (e.g., 'budget', '84-R-15428', 'airport')">
+                <button onclick="performSearch()">Search</button>
+            </div>
+            <button class="advanced-toggle" id="advancedToggle" onclick="toggleAdvanced()">
+                Advanced options <span class="chevron">▾</span>
+            </button>
+            <div class="advanced-panel" id="advancedPanel">
+                <label>Field</label>
+                <select id="searchField">
+                    <option value="all">All Fields</option>
+                    <option value="number">Number Only</option>
+                    <option value="description">Description Only</option>
+                </select>
+                <label>Type</label>
+                <select id="searchType">
+                    <option value="">All Types</option>
+                    <option value="Resolution">Resolution</option>
+                    <option value="Ordinance">Ordinance</option>
+                    <option value="Communication">Communication</option>
+                    <option value="Report">Report</option>
+                    <option value="Transfer">Transfer</option>
+                </select>
+                <label>From</label>
+                <input type="text" id="dateFrom" placeholder="YYYY or YYYY-MM or YYYY-MM-DD" style="width:13rem;">
+                <label>To</label>
+                <input type="text" id="dateTo" placeholder="YYYY or YYYY-MM or YYYY-MM-DD" style="width:13rem;">
+                <label>Sort</label>
+                <select id="sortOrder">
+                    <option value="date_desc">Newest First</option>
+                    <option value="date_asc">Oldest First</option>
+                    <option value="relevance">Relevance</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="stats" id="stats" style="display: none;">
+            <div class="stat">
+                <div class="stat-number" id="totalDates">-</div>
+                <div class="stat-label">Meeting Dates</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number" id="totalItems">-</div>
+                <div class="stat-label">Legislation Items</div>
+            </div>
+        </div>
+
+        <div class="quick-links">
+            <a href="/browse" class="card">
+                <h3>📅 Browse by Date</h3>
+                <p>Explore legislation chronologically</p>
+            </a>
+            <a href="/councilmembers" class="card">
+                <h3>👥 Councilmembers</h3>
+                <p>Browse Personal Papers by sponsor</p>
+            </a>
+            <a href="/committees" class="card">
+                <h3>🏛️ Committees</h3>
+                <p>Browse Committee Papers by committee</p>
+            </a>
+            <a href="/paper-types" class="card">
+                <h3>📋 Paper Type Analysis</h3>
+                <p>Committee Papers vs Personal Papers</p>
+            </a>
+            <a href="/dashboard" class="card">
+                <h3>📊 Analytics Dashboard</h3>
+                <p>Visualize legislation trends and final actions</p>
+            </a>
+            <a href="/news" class="card">
+                <h3>📰 News Releases</h3>
+                <p>Browse City Council press releases</p>
+            </a>
+            <a href="#" onclick="searchExample('airport'); return false;" class="card">
+                <h3>🔍 Example: Airport</h3>
+                <p>Search for airport-related legislation</p>
+            </a>
+            <a href="#" onclick="searchExample('budget'); return false;" class="card">
+                <h3>💰 Example: Budget</h3>
+                <p>Search for budget-related legislation</p>
+            </a>
+            <div class="card settlement-card" id="settlements-card">
+                <h3>⚖️ Settlements &amp; Claims</h3>
+                <div class="settlement-stats" id="settlement-stats">
+                    <div class="settlement-stat">
+                        <div class="settlement-stat-number" id="s-ind-count">—</div>
+                        <div class="settlement-stat-label">Individual Claims</div>
+                    </div>
+                    <div class="settlement-stat">
+                        <div class="settlement-stat-number" id="s-ind-total">—</div>
+                        <div class="settlement-stat-label">Individual Claims Total</div>
+                    </div>
+                    <div class="settlement-stat court">
+                        <div class="settlement-stat-number" id="s-court-count">—</div>
+                        <div class="settlement-stat-label">Court Litigations</div>
+                    </div>
+                    <div class="settlement-stat court">
+                        <div class="settlement-stat-number" id="s-court-total">—</div>
+                        <div class="settlement-stat-label">Court Litigations Total</div>
+                    </div>
+                    <div class="settlement-stat" style="border-left-color: #2c3e50;">
+                        <div class="settlement-stat-number" id="s-grand-total">—</div>
+                        <div class="settlement-stat-label">Grand Total Paid</div>
+                    </div>
+                </div>
+                <a href="/settlements" class="settlement-link">Browse all settlements →</a>
+            </div>
+            <div class="card settlement-card" id="donations-card">
+                <h3>🎁 Donations</h3>
+                <div class="settlement-stats" id="donation-stats">
+                    <div class="settlement-stat" style="border-left-color: #27ae60;">
+                        <div class="settlement-stat-number" id="d-acc-count">—</div>
+                        <div class="settlement-stat-label">Accepted by City</div>
+                    </div>
+                    <div class="settlement-stat" style="border-left-color: #27ae60;">
+                        <div class="settlement-stat-number" id="d-acc-total">—</div>
+                        <div class="settlement-stat-label">Accepted Total</div>
+                    </div>
+                    <div class="settlement-stat" style="border-left-color: #e67e22;">
+                        <div class="settlement-stat-number" id="d-made-count">—</div>
+                        <div class="settlement-stat-label">Made by City</div>
+                    </div>
+                    <div class="settlement-stat" style="border-left-color: #e67e22;">
+                        <div class="settlement-stat-number" id="d-made-total">—</div>
+                        <div class="settlement-stat-label">Made Total</div>
+                    </div>
+                </div>
+                <a href="/donations" class="settlement-link" style="color: #27ae60;">Browse all donations →</a>
+            </div>
+        </div>
+
+        <div id="results"></div>
+
+        <div style="text-align: center; margin-top: 3rem; padding: 2rem; border-top: 1px solid #ddd;">
+            <a href="/admin/sponsors" style="color: #7f8c8d; text-decoration: none; font-size: 0.9rem; margin-right: 2rem;">⚙️ Admin: Edit Sponsors</a>
+            <a href="/admin/final-actions" style="color: #7f8c8d; text-decoration: none; font-size: 0.9rem; margin-right: 2rem;">⚙️ Admin: Edit Final Actions</a>
+            <a href="/admin/news" style="color: #7f8c8d; text-decoration: none; font-size: 0.9rem; margin-right: 2rem;">⚙️ Admin: Manage News</a>
+            <a href="/admin/donations" style="color: #7f8c8d; text-decoration: none; font-size: 0.9rem; margin-right: 2rem;">⚙️ Admin: Edit Donations</a>
+            <a href="/admin/logs" style="color: #7f8c8d; text-decoration: none; font-size: 0.9rem;">📋 View Logs</a>
+        </div>
+    </div>
+
+    <script>
+        // Load settlement stats
+        fetch('/api/settlements/summary')
+            .then(r => r.json())
+            .then(data => {
+                const fmt = n => '$' + Math.round(n).toLocaleString();
+                document.getElementById('s-ind-count').textContent = data.individual_count.toLocaleString();
+                document.getElementById('s-ind-total').textContent = fmt(data.individual_total);
+                document.getElementById('s-court-count').textContent = data.court_count.toLocaleString();
+                document.getElementById('s-court-total').textContent = fmt(data.court_total);
+                document.getElementById('s-grand-total').textContent = fmt(data.grand_total);
+            })
+            .catch(() => {});
+
+        // Load donation stats
+        fetch('/api/donations/summary')
+            .then(r => r.json())
+            .then(data => {
+                const fmt = n => '$' + Math.round(n).toLocaleString();
+                document.getElementById('d-acc-count').textContent  = data.accepted_count.toLocaleString();
+                document.getElementById('d-acc-total').textContent  = fmt(data.accepted_total);
+                document.getElementById('d-made-count').textContent = data.made_count.toLocaleString();
+                document.getElementById('d-made-total').textContent = fmt(data.made_total);
+            })
+            .catch(() => {});
+
+        // Load stats on page load
+        fetch('/api/dates')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('totalDates').textContent = data.total_count.toLocaleString();
+                document.getElementById('totalItems').textContent = data.total_items.toLocaleString();
+                document.getElementById('stats').style.display = 'flex';
+            });
+
+        function toggleAdvanced() {
+            const toggle = document.getElementById('advancedToggle');
+            const panel  = document.getElementById('advancedPanel');
+            toggle.classList.toggle('open');
+            panel.classList.toggle('open');
+        }
+
+        function performSearch() {
+            const query    = document.getElementById('searchInput').value.trim();
+            const field    = document.getElementById('searchField').value;
+            const type     = document.getElementById('searchType').value;
+            const dateFrom = document.getElementById('dateFrom').value;
+            const dateTo   = document.getElementById('dateTo').value;
+            const sort     = document.getElementById('sortOrder').value;
+
+            if (!query) {
+                alert('Please enter a search term');
+                return;
+            }
+
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<div class="loading">Searching...</div>';
+
+            const params = new URLSearchParams({ q: query, field, sort });
+            if (type)     params.set('type', type);
+            if (dateFrom) params.set('date_from', dateFrom);
+            if (dateTo)   params.set('date_to', dateTo);
+            fetch(`/api/search?${params}`)
+                .then(response => response.json())
+                .then(data => {
+                    displayResults(data);
+                })
+                .catch(error => {
+                    resultsDiv.innerHTML = '<div class="no-results">Error performing search</div>';
+                });
+        }
+
+        function searchExample(term) {
+            document.getElementById('searchInput').value = term;
+            document.getElementById('searchField').value = 'all';
+            document.getElementById('searchType').value = '';
+            document.getElementById('dateFrom').value = '';
+            document.getElementById('dateTo').value = '';
+            document.getElementById('sortOrder').value = 'date_desc';
+            performSearch();
+        }
+
+        function displayResults(data) {
+            const resultsDiv = document.getElementById('results');
+
+            if (data.count === 0) {
+                resultsDiv.innerHTML = '<div class="no-results">No results found</div>';
+                return;
+            }
+
+            let html = `<h2>${data.count} Result${data.count !== 1 ? 's' : ''} Found</h2>`;
+
+            data.results.forEach(item => {
+                const typeBadge = item.legislationTypeName ?
+                    `<span class="type-badge">${escapeHtml(item.legislationTypeName)}</span>` : '';
+
+                // Filter out invalid sponsor patterns (substitution text)
+                const validSponsors = item.sponsors ? item.sponsors.filter(s =>
+                    !s.toUpperCase().includes(' AS SUBSTITUTED BY ') &&
+                    !s.toUpperCase().includes(' AS AMENDED BY ')
+                ) : [];
+
+                const sponsors = validSponsors.length > 0 ?
+                    `<div class="result-date" style="margin-top: 0.5rem;"><strong>Sponsor${validSponsors.length > 1 ? 's' : ''}:</strong> ${validSponsors.map(s => `<a href="/councilmember/${encodeURIComponent(s)}" style="color: #3498db; text-decoration: none;">${escapeHtml(s)}</a>`).join(', ')}</div>` : '';
+
+                const charterNote = item.isCharterAmendment ?
+                    `<span class="charter-amendment-note">Charter Amendment</span>` : '';
+
+                const claimBadge = item.claimType ?
+                    `<span class="claim-badge-${escapeHtml(item.claimType)}">Claim: ${escapeHtml(item.claimType)}</span>` : '';
+
+                html += `
+                    <div class="result-item">
+                        <div class="result-header">
+                            <div class="result-number">${escapeHtml(item.number || 'N/A')}${typeBadge}${charterNote}${claimBadge}</div>
+                            <div class="result-date">${item.date}</div>
+                        </div>
+                        <div class="result-description">${escapeHtml(item.description || 'No description')}</div>
+                        ${sponsors}
+                        ${item.finalAction ? `<div class="result-date" style="margin-top: 0.5rem;"><strong>Final Action:</strong> ${escapeHtml(item.finalAction)}</div>` : ''}
+                        ${item.meetingDocId ? `<a href="/legislation/${item.meetingDocId}" class="result-link">View Details →</a>` : ''}
+                        ${item.meetingDocId ? `<a href="https://atlantacityga.iqm2.com/Citizens/Detail_LegiFile.aspx?ID=${item.meetingDocId}" target="_blank" class="result-link" style="margin-left: 1rem;">ELMS ID: ${item.meetingDocId} →</a>` : ''}
+                        ${item.pdfUrl ? `<a href="${item.pdfUrl}" target="_blank" class="result-link" style="margin-left: 1rem;">PDF →</a>` : ''}
+                    </div>
+                `;
+            });
+
+            resultsDiv.innerHTML = html;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Allow Enter key to search
+        document.getElementById('searchInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                performSearch();
+            }
+        });
+    </script>
+</body>
+</html>

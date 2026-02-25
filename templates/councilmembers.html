@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Councilmembers - Atlanta City Council Legislation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: #2c3e50;
+            color: white;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .back-link {
+            color: #bdc3c7;
+            text-decoration: none;
+            display: inline-block;
+            margin-bottom: 0.5rem;
+        }
+
+        .back-link:hover {
+            color: white;
+        }
+
+        .subtitle {
+            color: #bdc3c7;
+            font-size: 1rem;
+        }
+
+        .councilmembers-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .councilmember-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            color: #333;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .councilmember-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .card-link {
+            text-decoration: none;
+            color: inherit;
+            flex: 1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .delete-btn {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            cursor: pointer;
+            font-size: 1rem;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.2s, background 0.2s;
+            z-index: 10;
+        }
+
+        .councilmember-card:hover .delete-btn {
+            opacity: 1;
+        }
+
+        .delete-btn:hover {
+            background: #c0392b;
+        }
+
+        .delete-btn:active {
+            transform: scale(0.95);
+        }
+
+        .councilmember-name {
+            font-weight: bold;
+            font-size: 1.1rem;
+            color: #2c3e50;
+        }
+
+        .councilmember-count {
+            background: #3498db;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #7f8c8d;
+        }
+
+        .stats {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .stats h2 {
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+        }
+
+        .stats p {
+            color: #7f8c8d;
+        }
+
+        .sort-controls {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .sort-label {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .sort-select {
+            flex: 1;
+            max-width: 300px;
+            padding: 0.75rem;
+            font-size: 1rem;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            background: white;
+            cursor: pointer;
+        }
+
+        .sort-select:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        .section-header {
+            margin: 2rem 0 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 3px solid #2c3e50;
+        }
+
+        .section-header h2 {
+            font-size: 1.4rem;
+            color: #2c3e50;
+        }
+
+        .section-header p {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+            margin-top: 0.25rem;
+        }
+
+        .councilmember-meta {
+            font-size: 0.8rem;
+            color: #7f8c8d;
+            margin-top: 0.25rem;
+        }
+
+        .councilmember-avg {
+            font-size: 0.8rem;
+            color: #27ae60;
+            font-weight: 600;
+            margin-top: 0.15rem;
+        }
+
+        .councilmember-card.known-member {
+            border-left: 3px solid #2c3e50;
+        }
+
+        .councilmember-info {
+            flex: 1;
+        }
+
+        .search-controls {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 1rem;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 0.75rem;
+            font-size: 1rem;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        .merge-controls {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 1rem;
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .merge-toggle-btn {
+            padding: 0.75rem 1.5rem;
+            background: #9b59b6;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+
+        .merge-toggle-btn:hover {
+            background: #8e44ad;
+        }
+
+        .merge-toggle-btn.active {
+            background: #27ae60;
+        }
+
+        .merge-action-btn {
+            padding: 0.75rem 1.5rem;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+
+        .merge-action-btn:hover {
+            background: #2980b9;
+        }
+
+        .merge-action-btn:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+        }
+
+        .merge-info {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+
+        .merge-checkbox {
+            position: absolute;
+            top: 0.5rem;
+            left: 0.5rem;
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            z-index: 10;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .councilmember-card.merge-mode .merge-checkbox {
+            opacity: 1;
+        }
+
+        .councilmember-card.selected {
+            border: 3px solid #3498db;
+        }
+
+        .filter-controls {
+            background: white;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 1rem;
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 0.4rem 1rem;
+            border: 2px solid #2c3e50;
+            background: white;
+            color: #2c3e50;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .filter-btn:hover {
+            background: #2c3e50;
+            color: white;
+        }
+
+        .filter-btn.active {
+            background: #2c3e50;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <a href="/" class="back-link">← Back to Home</a>
+            <h1>Councilmembers</h1>
+            <p class="subtitle">Browse legislation by sponsor &nbsp;·&nbsp; <a href="/councilmembers/timeline" style="color:#bdc3c7;">View Office Timeline →</a></p>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="stats" id="stats" style="display: none;">
+            <h2 id="totalSponsors">-</h2>
+            <p>councilmembers have sponsored legislation</p>
+        </div>
+
+        <div class="search-controls">
+            <input type="text" id="searchInput" class="search-input" placeholder="Search sponsors by name...">
+        </div>
+
+        <div class="filter-controls">
+            <button id="filterAll" class="filter-btn active" onclick="setFilter('all')">All</button>
+            <button id="filterCurrent" class="filter-btn" onclick="setFilter('current')">Current Members</button>
+            <button id="filterFormer" class="filter-btn" onclick="setFilter('former')">Former Members</button>
+        </div>
+
+        <div class="merge-controls">
+            <button id="mergeToggleBtn" class="merge-toggle-btn" onclick="toggleMergeMode()">
+                Enable Merge Mode
+            </button>
+            <button id="mergeActionBtn" class="merge-action-btn" onclick="performMerge()" disabled style="display: none;">
+                Merge Selected
+            </button>
+            <span id="mergeInfo" class="merge-info" style="display: none;"></span>
+        </div>
+
+        <div class="sort-controls" id="sortControls" style="display: none;">
+            <label class="sort-label" for="sortSelect">Sort by:</label>
+            <select id="sortSelect" class="sort-select" onchange="changeSortOrder()">
+                <option value="count-desc">Item Count (High to Low)</option>
+                <option value="count-asc">Item Count (Low to High)</option>
+                <option value="avg-desc">Avg/Meeting (High to Low)</option>
+                <option value="avg-asc">Avg/Meeting (Low to High)</option>
+                <option value="name-asc">Name (A-Z)</option>
+                <option value="name-desc">Name (Z-A)</option>
+                <option value="start-desc">Service Start (Newest)</option>
+                <option value="start-asc">Service Start (Oldest)</option>
+            </select>
+        </div>
+
+        <div id="knownSection" style="display: none;">
+            <div class="section-header">
+                <h2>Councilmembers</h2>
+                <p id="knownCount"></p>
+            </div>
+            <div class="councilmembers-grid" id="knownGrid"></div>
+        </div>
+
+        <div id="otherSection" style="display: none;">
+            <div class="section-header">
+                <h2>Other Sponsors</h2>
+                <p id="otherCount"></p>
+            </div>
+            <div class="councilmembers-grid" id="otherGrid"></div>
+        </div>
+
+        <div id="councilmembersGrid">
+            <div class="loading">Loading councilmembers...</div>
+        </div>
+    </div>
+
+    <script>
+        const STORAGE_KEY = 'councilmembers_sort_preference';
+        let allSponsors = [];
+        let filteredSponsors = [];
+        let mergeMode = false;
+        let selectedSponsors = new Set();
+        let termsMap = {};  // name -> term data from councilmembers.json
+        let activeFilter = 'all';  // 'all', 'current', 'former'
+
+        function formatOneTerm(start, end) {
+            const startYear = new Date(start).getFullYear();
+            if (!end) return `${startYear}–present`;
+            const endYear = new Date(end).getFullYear();
+            return startYear === endYear ? `${startYear}` : `${startYear}–${endYear}`;
+        }
+
+        function formatTermYears(sponsor) {
+            if (sponsor.terms && sponsor.terms.length > 0) {
+                return sponsor.terms.map(t => formatOneTerm(t.start, t.end)).join(', ');
+            }
+            return formatOneTerm(sponsor.start, sponsor.end);
+        }
+
+        // Load both sponsors and councilmember terms
+        Promise.all([
+            fetch('/api/sponsors').then(r => r.json()),
+            fetch('/api/councilmembers-terms').then(r => r.json())
+        ])
+        .then(([sponsorData, termsData]) => {
+            allSponsors = sponsorData.sponsors;
+
+            // Build a name lookup from councilmembers.json
+            (termsData.councilmembers || []).forEach(cm => {
+                termsMap[cm.name] = cm;
+            });
+
+            // Enrich sponsors with term data
+            allSponsors.forEach(sponsor => {
+                const term = termsMap[sponsor.name];
+                if (term) {
+                    sponsor.terms = term.terms || null;
+                    // start/end are derived from terms by the API
+                    sponsor.start = term.start || (term.terms && term.terms[0] && term.terms[0].start);
+                    sponsor.end   = term.end   || (term.terms && term.terms[term.terms.length - 1] && term.terms[term.terms.length - 1].end);
+                    sponsor.meetingsDuringTenure = term.meetings_during_tenure || 0;
+                    sponsor.avgPerMeeting = sponsor.meetingsDuringTenure > 0
+                        ? sponsor.count / sponsor.meetingsDuringTenure
+                        : 0;
+                    sponsor.isKnown = true;
+                } else {
+                    sponsor.isKnown = false;
+                }
+            });
+
+            // Load saved sort preference
+            const savedSort = localStorage.getItem(STORAGE_KEY) || 'count-desc';
+            document.getElementById('sortSelect').value = savedSort;
+
+            // Apply sort and display
+            sortAndDisplay();
+
+            // Show controls
+            document.getElementById('sortControls').style.display = 'flex';
+
+            // Setup search
+            setupSearch();
+        })
+        .catch(error => {
+            document.getElementById('councilmembersGrid').innerHTML =
+                '<div class="loading">Error loading councilmembers</div>';
+        });
+
+        function setupSearch() {
+            const searchInput = document.getElementById('searchInput');
+            searchInput.addEventListener('input', function() {
+                const query = this.value.toLowerCase().trim();
+                if (query) {
+                    filteredSponsors = allSponsors.filter(s =>
+                        s.name.toLowerCase().includes(query)
+                    );
+                } else {
+                    filteredSponsors = allSponsors;
+                }
+                sortAndDisplay();
+            });
+        }
+
+        function setFilter(filter) {
+            activeFilter = filter;
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`filter${filter.charAt(0).toUpperCase() + filter.slice(1)}`).classList.add('active');
+            sortAndDisplay();
+        }
+
+        function changeSortOrder() {
+            const sortValue = document.getElementById('sortSelect').value;
+            localStorage.setItem(STORAGE_KEY, sortValue);
+            sortAndDisplay();
+        }
+
+        function applySort(list, sortValue) {
+            const sorted = [...list];
+            switch(sortValue) {
+                case 'count-desc': sorted.sort((a, b) => b.count - a.count); break;
+                case 'count-asc':  sorted.sort((a, b) => a.count - b.count); break;
+                case 'avg-desc':   sorted.sort((a, b) => (b.avgPerMeeting||0) - (a.avgPerMeeting||0)); break;
+                case 'avg-asc':    sorted.sort((a, b) => (a.avgPerMeeting||0) - (b.avgPerMeeting||0)); break;
+                case 'name-asc':   sorted.sort((a, b) => a.name.localeCompare(b.name)); break;
+                case 'name-desc':  sorted.sort((a, b) => b.name.localeCompare(a.name)); break;
+                case 'start-desc': sorted.sort((a, b) => (b.start||'').localeCompare(a.start||'')); break;
+                case 'start-asc':  sorted.sort((a, b) => (a.start||'').localeCompare(b.start||'')); break;
+            }
+            return sorted;
+        }
+
+        function sortAndDisplay() {
+            const sortValue = document.getElementById('sortSelect').value;
+            let base = (filteredSponsors.length > 0 || document.getElementById('searchInput').value)
+                ? filteredSponsors : allSponsors;
+
+            // Apply current/former filter
+            // For multi-term members, check if the last term is still active
+            const isCurrent = s => {
+                if (s.terms && s.terms.length > 0) {
+                    return s.terms[s.terms.length - 1].end === null;
+                }
+                return !s.end;
+            };
+            if (activeFilter === 'current') {
+                base = base.filter(s => s.isKnown && isCurrent(s));
+            } else if (activeFilter === 'former') {
+                base = base.filter(s => s.isKnown && !isCurrent(s));
+            }
+
+            const known = applySort(base.filter(s => s.isKnown), sortValue);
+            // Only show other sponsors when viewing all
+            const other = activeFilter === 'all'
+                ? applySort(base.filter(s => !s.isKnown), sortValue)
+                : [];
+
+            displayCouncilmembers(known, other);
+        }
+
+        function buildCard(sponsor) {
+            const encodedName = encodeURIComponent(sponsor.name);
+            const escapedName = escapeHtml(sponsor.name);
+            const dataName = escapedName.replace(/"/g, '&quot;');
+            const isSelected = selectedSponsors.has(sponsor.name);
+            const cardClasses = [
+                'councilmember-card',
+                sponsor.isKnown ? 'known-member' : '',
+                mergeMode ? 'merge-mode' : '',
+                isSelected ? 'selected' : ''
+            ].filter(Boolean).join(' ');
+
+            let metaHtml = '';
+            if (sponsor.isKnown) {
+                const termStr = formatTermYears(sponsor);
+                const avg = sponsor.avgPerMeeting ? sponsor.avgPerMeeting.toFixed(2) : '—';
+                const meetings = sponsor.meetingsDuringTenure || 0;
+                metaHtml = `
+                    <div class="councilmember-meta">${termStr} · ${meetings.toLocaleString()} meetings</div>
+                    <div class="councilmember-avg">${avg} items/meeting avg</div>
+                `;
+            }
+
+            return `
+                <div class="${cardClasses}" data-sponsor-name="${dataName}">
+                    ${mergeMode ? `<input type="checkbox" class="merge-checkbox" ${isSelected ? 'checked' : ''}>` : ''}
+                    <button class="delete-btn" data-sponsor-name="${dataName}" data-sponsor-count="${sponsor.count}" title="Delete this sponsor">×</button>
+                    <a href="/councilmember/${encodedName}" class="card-link">
+                        <div class="councilmember-info">
+                            <div class="councilmember-name">${escapedName}</div>
+                            ${metaHtml}
+                        </div>
+                        <div class="councilmember-count">${sponsor.count.toLocaleString()}</div>
+                    </a>
+                </div>
+            `;
+        }
+
+        function displayCouncilmembers(knownSponsors, otherSponsors) {
+            const stats = document.getElementById('stats');
+            const totalSponsors = document.getElementById('totalSponsors');
+            const total = knownSponsors.length + otherSponsors.length;
+
+            totalSponsors.textContent = total;
+            stats.style.display = 'block';
+
+            // Hide legacy grid
+            document.getElementById('councilmembersGrid').style.display = 'none';
+
+            // Known section
+            const knownSection = document.getElementById('knownSection');
+            const knownGrid = document.getElementById('knownGrid');
+            const knownCount = document.getElementById('knownCount');
+            if (knownSponsors.length > 0) {
+                knownCount.textContent = `${knownSponsors.length} councilmember${knownSponsors.length !== 1 ? 's' : ''} with term data`;
+                knownGrid.innerHTML = knownSponsors.map(buildCard).join('');
+                knownSection.style.display = 'block';
+            } else {
+                knownSection.style.display = 'none';
+            }
+
+            // Other section
+            const otherSection = document.getElementById('otherSection');
+            const otherGrid = document.getElementById('otherGrid');
+            const otherCount = document.getElementById('otherCount');
+            if (otherSponsors.length > 0) {
+                otherCount.textContent = `${otherSponsors.length} sponsor${otherSponsors.length !== 1 ? 's' : ''} not matched to a councilmember record`;
+                otherGrid.innerHTML = otherSponsors.map(buildCard).join('');
+                otherSection.style.display = 'block';
+            } else {
+                otherSection.style.display = 'none';
+            }
+
+            // Combine grids for event listeners
+            const allCards = [
+                ...knownGrid.querySelectorAll('.councilmember-card'),
+                ...otherGrid.querySelectorAll('.councilmember-card')
+            ];
+
+            // Attach event listeners to delete buttons
+            allCards.forEach(card => {
+                const btn = card.querySelector('.delete-btn');
+                if (btn) {
+                    btn.addEventListener('click', function(event) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        if (!mergeMode) {
+                            const sponsorName = this.getAttribute('data-sponsor-name');
+                            const sponsorCount = parseInt(this.getAttribute('data-sponsor-count'));
+                            if (sponsorName) deleteSponsor(this, sponsorName, sponsorCount);
+                        }
+                    });
+                }
+            });
+
+            // Attach event listeners to checkboxes
+            if (mergeMode) {
+                allCards.forEach(card => {
+                    const checkbox = card.querySelector('.merge-checkbox');
+                    if (checkbox) {
+                        checkbox.addEventListener('change', function(event) {
+                            event.stopPropagation();
+                            const sponsorName = card.getAttribute('data-sponsor-name');
+                            if (this.checked) {
+                                selectedSponsors.add(sponsorName);
+                                card.classList.add('selected');
+                            } else {
+                                selectedSponsors.delete(sponsorName);
+                                card.classList.remove('selected');
+                            }
+                            updateMergeControls();
+                        });
+                    }
+
+                    card.addEventListener('click', function(event) {
+                        if (!event.target.closest('a') && !event.target.classList.contains('merge-checkbox')) {
+                            const checkbox = this.querySelector('.merge-checkbox');
+                            if (checkbox) {
+                                checkbox.checked = !checkbox.checked;
+                                checkbox.dispatchEvent(new Event('change'));
+                            }
+                        }
+                    });
+                });
+            }
+        }
+
+        function deleteSponsor(btn, sponsorName, count) {
+            // Confirm deletion
+            const message = `Are you sure you want to delete "${sponsorName}"?\n\nThis will remove this sponsor from ${count.toLocaleString()} item${count !== 1 ? 's' : ''} across all meeting dates.\n\nThis action cannot be undone (but backups will be created).`;
+
+            if (!confirm(message)) {
+                return;
+            }
+
+            // Show loading state
+            btn.textContent = '⋯';
+            btn.disabled = true;
+
+            // Call API to delete sponsor
+            fetch('/api/admin/delete-sponsor', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ sponsor_name: sponsorName })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(`Successfully deleted "${sponsorName}"!\n\nFiles updated: ${data.files_updated}\nItems updated: ${data.items_updated}`);
+                    // Reload the sponsors list
+                    location.reload();
+                } else {
+                    alert(`Error: ${data.error}`);
+                    btn.textContent = '×';
+                    btn.disabled = false;
+                }
+            })
+            .catch(error => {
+                alert(`Error deleting sponsor: ${error.message}`);
+                btn.textContent = '×';
+                btn.disabled = false;
+            });
+        }
+
+        function toggleMergeMode() {
+            mergeMode = !mergeMode;
+            const toggleBtn = document.getElementById('mergeToggleBtn');
+            const actionBtn = document.getElementById('mergeActionBtn');
+            const mergeInfo = document.getElementById('mergeInfo');
+
+            if (mergeMode) {
+                toggleBtn.textContent = 'Disable Merge Mode';
+                toggleBtn.classList.add('active');
+                actionBtn.style.display = 'inline-block';
+                mergeInfo.style.display = 'inline';
+                selectedSponsors.clear();
+            } else {
+                toggleBtn.textContent = 'Enable Merge Mode';
+                toggleBtn.classList.remove('active');
+                actionBtn.style.display = 'none';
+                mergeInfo.style.display = 'none';
+                selectedSponsors.clear();
+            }
+
+            // Redisplay to show/hide checkboxes
+            sortAndDisplay();
+            updateMergeControls();
+        }
+
+        function updateMergeControls() {
+            const actionBtn = document.getElementById('mergeActionBtn');
+            const mergeInfo = document.getElementById('mergeInfo');
+            const count = selectedSponsors.size;
+
+            if (count >= 2) {
+                actionBtn.disabled = false;
+                mergeInfo.textContent = `${count} sponsors selected`;
+            } else {
+                actionBtn.disabled = true;
+                mergeInfo.textContent = count === 1 ? '1 sponsor selected (select at least 2 to merge)' : 'Select sponsors to merge';
+            }
+        }
+
+        function performMerge() {
+            if (selectedSponsors.size < 2) {
+                alert('Please select at least 2 sponsors to merge');
+                return;
+            }
+
+            const sponsorNames = Array.from(selectedSponsors);
+            const totalItems = sponsorNames.reduce((sum, name) => {
+                const sponsor = allSponsors.find(s => s.name === name);
+                return sum + (sponsor ? sponsor.count : 0);
+            }, 0);
+
+            // Show list of selected sponsors
+            const sponsorList = sponsorNames.join('\n  • ');
+
+            // Ask for canonical name
+            const canonicalName = prompt(
+                `You are about to merge ${sponsorNames.length} sponsors:\n  • ${sponsorList}\n\nThis will affect ${totalItems.toLocaleString()} legislation items.\n\nEnter the canonical name to use (all variations will be merged into this name):`
+            );
+
+            if (!canonicalName || !canonicalName.trim()) {
+                return;
+            }
+
+            const finalCanonical = canonicalName.trim();
+
+            // Confirm
+            if (!confirm(`Confirm merge:\n\nMerge these ${sponsorNames.length} sponsors:\n  • ${sponsorList}\n\nInto: "${finalCanonical}"\n\nThis will update ${totalItems.toLocaleString()} items and cannot be undone (but backups will be created).`)) {
+                return;
+            }
+
+            // Disable button and show loading
+            const actionBtn = document.getElementById('mergeActionBtn');
+            actionBtn.textContent = 'Merging...';
+            actionBtn.disabled = true;
+
+            // Call API
+            fetch('/api/admin/merge-sponsors', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    variations: sponsorNames,
+                    canonical_name: finalCanonical
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(`Successfully merged sponsors!\n\nFiles updated: ${data.files_updated}\nItems updated: ${data.items_updated}`);
+                    // Reload the page
+                    location.reload();
+                } else {
+                    alert(`Error: ${data.error}`);
+                    actionBtn.textContent = 'Merge Selected';
+                    actionBtn.disabled = false;
+                }
+            })
+            .catch(error => {
+                alert(`Error merging sponsors: ${error.message}`);
+                actionBtn.textContent = 'Merge Selected';
+                actionBtn.disabled = false;
+            });
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>

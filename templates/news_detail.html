@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ news.title }} - Atlanta City Council</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: #34495e;
+            color: white;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+        }
+
+        .back-link {
+            color: #ecf0f1;
+            text-decoration: none;
+            display: inline-block;
+            margin-bottom: 0.5rem;
+        }
+
+        .back-link:hover {
+            color: white;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+            line-height: 1.3;
+        }
+
+        .metadata {
+            display: flex;
+            gap: 2rem;
+            color: #bdc3c7;
+            font-size: 0.9rem;
+            margin-top: 1rem;
+        }
+
+        .metadata-item {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .metadata-label {
+            font-weight: bold;
+        }
+
+        .card {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 1.5rem;
+        }
+
+        .card h2 {
+            color: #2c3e50;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #3498db;
+        }
+
+        .content {
+            color: #555;
+            line-height: 1.8;
+            font-size: 1.05rem;
+        }
+
+        .content p {
+            margin-bottom: 1rem;
+        }
+
+        .content a {
+            color: #3498db;
+            text-decoration: none;
+        }
+
+        .content a:hover {
+            text-decoration: underline;
+        }
+
+        .links-list {
+            list-style: none;
+            margin-top: 1rem;
+        }
+
+        .links-list li {
+            margin-bottom: 0.75rem;
+        }
+
+        .link-item {
+            color: #3498db;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: color 0.2s;
+        }
+
+        .link-item:hover {
+            color: #2980b9;
+            text-decoration: underline;
+        }
+
+        .link-item::before {
+            content: '🔗';
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .info-item {
+            border-left: 3px solid #3498db;
+            padding-left: 1rem;
+        }
+
+        .info-label {
+            font-weight: bold;
+            color: #7f8c8d;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.25rem;
+        }
+
+        .info-value {
+            color: #2c3e50;
+            font-size: 1.1rem;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <a href="/news" class="back-link">← Back to News</a>
+            <h1>{{ news.title }}</h1>
+            <div class="metadata">
+                <div class="metadata-item">
+                    <span class="metadata-label">ID:</span>
+                    <span>{{ news.id }}</span>
+                </div>
+                <div class="metadata-item">
+                    <span class="metadata-label">Published:</span>
+                    <span>{{ news.date }}</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Main Content -->
+        <div class="card">
+            <h2>News Release</h2>
+            <div class="content">
+                {{ news.content_html|safe }}
+            </div>
+        </div>
+
+        <!-- Links & Attachments -->
+        {% if news.links %}
+        <div class="card">
+            <h2>Links & Resources</h2>
+            <ul class="links-list">
+                {% for link in news.links %}
+                <li>
+                    <a href="{{ link.href }}" class="link-item" target="_blank">
+                        {{ link.text or link.href }}
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        <!-- Details -->
+        <div class="card">
+            <h2>Details</h2>
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-label">News ID</div>
+                    <div class="info-value">{{ news.id }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Publication Date</div>
+                    <div class="info-value">{{ news.date }}</div>
+                </div>
+                {% if news.scraped_at %}
+                <div class="info-item">
+                    <div class="info-label">Archived On</div>
+                    <div class="info-value">{{ news.scraped_at.split('T')[0] }}</div>
+                </div>
+                {% endif %}
+                <div class="info-item">
+                    <div class="info-label">Source</div>
+                    <div class="info-value">
+                        <a href="{{ news.url }}" target="_blank" style="color: #3498db; text-decoration: none;">
+                            City Council Website →
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

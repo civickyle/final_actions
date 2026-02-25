@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ action_value }} - Final Action</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: #2c3e50;
+            color: white;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .back-link {
+            color: #bdc3c7;
+            text-decoration: none;
+            display: inline-block;
+            margin-bottom: 0.5rem;
+        }
+
+        .back-link:hover {
+            color: white;
+        }
+
+        .subtitle {
+            color: #bdc3c7;
+            font-size: 1rem;
+        }
+
+        .legislation-item {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .legislation-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.75rem;
+        }
+
+        .legislation-number {
+            font-weight: bold;
+            color: #2c3e50;
+            font-size: 1.1rem;
+        }
+
+        .type-badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            background: #3498db;
+            color: white;
+            border-radius: 3px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            margin-left: 0.5rem;
+        }
+
+        .legislation-date {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+
+        .legislation-description {
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 0.5rem;
+        }
+
+        .pdf-link {
+            display: inline-block;
+            margin-top: 0.5rem;
+            color: #3498db;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+
+        .pdf-link:hover {
+            text-decoration: underline;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #7f8c8d;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 3rem;
+            color: #7f8c8d;
+        }
+
+        .stats {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+
+        .stats h2 {
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+        }
+
+        .charter-amendment-note {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            background: #f39c12;
+            color: white;
+            border-radius: 3px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            margin-left: 0.5rem;
+        }
+
+        .claim-badge-adversed {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            background: #95a5a6;
+            color: white;
+            border-radius: 3px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            margin-left: 0.5rem;
+        }
+
+        .claim-badge-settlement {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            background: #e74c3c;
+            color: white;
+            border-radius: 3px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            margin-left: 0.5rem;
+        }
+
+        .action-value {
+            font-style: italic;
+            color: #7f8c8d;
+        }
+
+        .action-value.empty {
+            color: #95a5a6;
+        }
+
+        .edit-btn {
+            padding: 0.3rem 0.75rem;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            margin-left: 0.5rem;
+            transition: background 0.2s;
+        }
+
+        .edit-btn:hover {
+            background: #2980b9;
+        }
+
+        .field-row {
+            display: flex;
+            align-items: start;
+            margin-bottom: 0.5rem;
+        }
+
+        .field-label {
+            font-weight: bold;
+            margin-right: 0.5rem;
+            color: #2c3e50;
+        }
+
+        .field-value {
+            flex: 1;
+        }
+
+        .field-value-text {
+            white-space: pre-wrap;
+        }
+
+        .field-edit-container {
+            display: none;
+            flex: 1;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .field-edit-container.active {
+            display: flex;
+        }
+
+        .field-value.editing {
+            display: none;
+        }
+
+        .edit-textarea {
+            width: 100%;
+            min-height: 80px;
+            padding: 0.5rem;
+            font-family: inherit;
+            font-size: 1rem;
+            border: 2px solid #3498db;
+            border-radius: 4px;
+            resize: vertical;
+        }
+
+        .edit-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .save-btn {
+            padding: 0.3rem 0.75rem;
+            background: #27ae60;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: background 0.2s;
+        }
+
+        .save-btn:hover {
+            background: #229954;
+        }
+
+        .cancel-btn {
+            padding: 0.3rem 0.75rem;
+            background: #95a5a6;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: background 0.2s;
+        }
+
+        .cancel-btn:hover {
+            background: #7f8c8d;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <a href="/admin/final-actions" class="back-link">← Back to Final Actions</a>
+            <h1>Final Action: <span class="action-value" id="actionName">{{ action_value }}</span></h1>
+            <p class="subtitle" id="subtitle">Loading legislation...</p>
+        </div>
+    </header>
+
+    <div class="container">
+        <div id="legislationList">
+            <div class="loading">Loading legislation...</div>
+        </div>
+    </div>
+
+    <script>
+        const actionValue = {{ action_value|tojson }};
+
+        // Load legislation for this final action
+        fetch(`/api/final-action/${encodeURIComponent(actionValue)}`)
+            .then(response => response.json())
+            .then(data => {
+                displayLegislation(data);
+            })
+            .catch(error => {
+                document.getElementById('legislationList').innerHTML =
+                    '<div class="no-data">Error loading legislation</div>';
+            });
+
+        function displayLegislation(data) {
+            const listDiv = document.getElementById('legislationList');
+            const subtitle = document.getElementById('subtitle');
+            const actionName = document.getElementById('actionName');
+
+            if (data.count === 0) {
+                listDiv.innerHTML = '<div class="no-data">No legislation found with this final action</div>';
+                subtitle.textContent = 'No items found';
+                return;
+            }
+
+            // Update subtitle
+            subtitle.textContent = `${data.count.toLocaleString()} item${data.count !== 1 ? 's' : ''}`;
+
+            // Style the action name if empty
+            if (data.action === '(empty)') {
+                actionName.classList.add('empty');
+            }
+
+            let html = '';
+
+            data.data.forEach(item => {
+                const typeBadge = item.legislationTypeName ?
+                    `<span class="type-badge">${escapeHtml(item.legislationTypeName)}</span>` : '';
+
+                const charterNote = item.isCharterAmendment ?
+                    `<span class="charter-amendment-note">Charter Amendment</span>` : '';
+
+                const claimBadge = item.claimType ?
+                    `<span class="claim-badge-${escapeHtml(item.claimType)}">Claim: ${escapeHtml(item.claimType)}</span>` : '';
+
+                // Show sponsors if available
+                const validSponsors = item.sponsors ? item.sponsors.filter(s =>
+                    !s.toUpperCase().includes(' AS SUBSTITUTED BY ') &&
+                    !s.toUpperCase().includes(' AS AMENDED BY ')
+                ) : [];
+                const sponsorsText = validSponsors.length > 0 ?
+                    `<div class="legislation-date" style="margin-top: 0.5rem;"><strong>Sponsor${validSponsors.length > 1 ? 's' : ''}:</strong> ${validSponsors.map(s => `<a href="/councilmember/${encodeURIComponent(s)}" style="color: #3498db; text-decoration: none;">${escapeHtml(s)}</a>`).join(', ')}</div>` : '';
+
+                html += `
+                    <div class="legislation-item" data-item-id="${item.id}" data-item-date="${item.date}">
+                        <div class="legislation-header">
+                            <div class="legislation-number">${escapeHtml(item.number || 'N/A')}${typeBadge}${charterNote}${claimBadge}</div>
+                            <div class="legislation-date">${item.date}</div>
+                        </div>
+                        <div class="field-row" data-field="description">
+                            <span class="field-label">Description:</span>
+                            <span class="field-value field-value-text">${escapeHtml(item.description || 'No description')}</span>
+                            <div class="field-edit-container">
+                                <textarea class="edit-textarea">${escapeHtml(item.description || '')}</textarea>
+                                <div class="edit-actions">
+                                    <button class="save-btn">Save</button>
+                                    <button class="cancel-btn">Cancel</button>
+                                </div>
+                            </div>
+                            <button class="edit-btn edit-description" data-item-id="${item.id}" data-item-date="${item.date}">Edit</button>
+                        </div>
+                        <div class="field-row" data-field="final-action">
+                            <span class="field-label">Final Action:</span>
+                            <span class="field-value field-value-text">${escapeHtml(item.finalAction || '(empty)')}</span>
+                            <div class="field-edit-container">
+                                <textarea class="edit-textarea">${escapeHtml(item.finalAction || '')}</textarea>
+                                <div class="edit-actions">
+                                    <button class="save-btn">Save</button>
+                                    <button class="cancel-btn">Cancel</button>
+                                </div>
+                            </div>
+                            <button class="edit-btn edit-final-action" data-item-id="${item.id}" data-item-date="${item.date}">Edit</button>
+                        </div>
+                        ${sponsorsText}
+                        ${item.meetingDocId ? `<a href="https://atlantacityga.iqm2.com/Citizens/Detail_LegiFile.aspx?ID=${item.meetingDocId}" target="_blank" class="pdf-link">ELMS ID: ${item.meetingDocId} →</a>` : ''}
+                        ${item.pdfUrl ? `<a href="${item.pdfUrl}" target="_blank" class="pdf-link" style="margin-left: 1rem;">PDF →</a>` : ''}
+                    </div>
+                `;
+            });
+
+            listDiv.innerHTML = html;
+
+            // Attach event listeners to edit buttons
+            attachEditListeners();
+        }
+
+        function autoResizeTextarea(textarea) {
+            // Reset height to auto to get the correct scrollHeight
+            textarea.style.height = 'auto';
+            // Set height to scrollHeight to fit all content
+            textarea.style.height = textarea.scrollHeight + 'px';
+        }
+
+        function attachEditListeners() {
+            // Edit buttons - toggle edit mode
+            document.querySelectorAll('.edit-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const fieldRow = this.closest('.field-row');
+                    const fieldValue = fieldRow.querySelector('.field-value');
+                    const editContainer = fieldRow.querySelector('.field-edit-container');
+                    const textarea = editContainer.querySelector('.edit-textarea');
+
+                    // Show edit mode, hide view mode
+                    fieldValue.classList.add('editing');
+                    editContainer.classList.add('active');
+                    this.style.display = 'none';
+
+                    // Auto-resize textarea to fit content
+                    autoResizeTextarea(textarea);
+
+                    // Focus the textarea
+                    textarea.focus();
+
+                    // Add input listener to auto-resize as user types
+                    textarea.addEventListener('input', function() {
+                        autoResizeTextarea(this);
+                    });
+                });
+            });
+
+            // Save buttons
+            document.querySelectorAll('.save-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const fieldRow = this.closest('.field-row');
+                    const editContainer = fieldRow.querySelector('.field-edit-container');
+                    const textarea = editContainer.querySelector('.edit-textarea');
+                    const fieldValue = fieldRow.querySelector('.field-value');
+                    const editBtn = fieldRow.querySelector('.edit-btn');
+                    const itemId = parseInt(editBtn.getAttribute('data-item-id'));
+                    const itemDate = editBtn.getAttribute('data-item-date');
+                    const fieldType = fieldRow.getAttribute('data-field');
+                    const newValue = textarea.value;
+
+                    // Determine which field to update
+                    const updates = {};
+                    if (fieldType === 'description') {
+                        updates.description = newValue;
+                    } else if (fieldType === 'final-action') {
+                        updates.final_action = newValue;
+                    }
+
+                    // Call API to update
+                    updateItem(itemDate, itemId, updates, fieldRow, newValue);
+                });
+            });
+
+            // Cancel buttons
+            document.querySelectorAll('.cancel-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const fieldRow = this.closest('.field-row');
+                    const fieldValue = fieldRow.querySelector('.field-value');
+                    const editContainer = fieldRow.querySelector('.field-edit-container');
+                    const textarea = editContainer.querySelector('.edit-textarea');
+                    const editBtn = fieldRow.querySelector('.edit-btn');
+
+                    // Reset textarea to original value
+                    const originalValue = fieldValue.textContent;
+                    if (originalValue !== 'No description' && originalValue !== '(empty)') {
+                        textarea.value = originalValue;
+                    }
+
+                    // Hide edit mode, show view mode
+                    fieldValue.classList.remove('editing');
+                    editContainer.classList.remove('active');
+                    editBtn.style.display = '';
+                });
+            });
+        }
+
+        function updateItem(date, itemId, updates, fieldRow, newValue) {
+            // Call API to update item
+            fetch('/api/admin/update-item', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    date: date,
+                    item_id: itemId,
+                    ...updates
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update the view mode text with the new value
+                    const fieldValue = fieldRow.querySelector('.field-value');
+                    const editContainer = fieldRow.querySelector('.field-edit-container');
+                    const editBtn = fieldRow.querySelector('.edit-btn');
+
+                    // Update the displayed text
+                    if (newValue) {
+                        fieldValue.textContent = newValue;
+                    } else {
+                        const fieldType = fieldRow.getAttribute('data-field');
+                        fieldValue.textContent = fieldType === 'description' ? 'No description' : '(empty)';
+                    }
+
+                    // Return to view mode
+                    fieldValue.classList.remove('editing');
+                    editContainer.classList.remove('active');
+                    editBtn.style.display = '';
+                } else {
+                    alert(`Error: ${data.error}`);
+                }
+            })
+            .catch(error => {
+                alert(`Error updating item: ${error.message}`);
+            });
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>

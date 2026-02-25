@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ sponsor_name }} - Atlanta City Council Legislation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: #2c3e50;
+            color: white;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .back-link {
+            color: #bdc3c7;
+            text-decoration: none;
+            display: inline-block;
+            margin-bottom: 0.5rem;
+        }
+
+        .back-link:hover {
+            color: white;
+        }
+
+        .subtitle {
+            color: #bdc3c7;
+            font-size: 1rem;
+        }
+
+        .legislation-item {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .legislation-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.75rem;
+        }
+
+        .legislation-number {
+            font-weight: bold;
+            color: #2c3e50;
+            font-size: 1.1rem;
+        }
+
+        .type-badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            background: #3498db;
+            color: white;
+            border-radius: 3px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            margin-left: 0.5rem;
+        }
+
+        .legislation-date {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+
+        .legislation-description {
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 0.5rem;
+        }
+
+        .pdf-link {
+            display: inline-block;
+            margin-top: 0.5rem;
+            color: #3498db;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+
+        .pdf-link:hover {
+            text-decoration: underline;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #7f8c8d;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 3rem;
+            color: #7f8c8d;
+        }
+
+        .stats {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+
+        .stats h2 {
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+        }
+
+        .co-sponsors {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+
+        .charter-amendment-note {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            background: #f39c12;
+            color: white;
+            border-radius: 3px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            margin-left: 0.5rem;
+        }
+
+        .claim-badge-adversed {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            background: #95a5a6;
+            color: white;
+            border-radius: 3px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            margin-left: 0.5rem;
+        }
+
+        .claim-badge-settlement {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            background: #e74c3c;
+            color: white;
+            border-radius: 3px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            margin-left: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <a href="/councilmembers" class="back-link">← Back to Councilmembers</a>
+            <h1 id="sponsorName">{{ sponsor_name }}</h1>
+            <p class="subtitle" id="subtitle">Loading sponsored legislation...</p>
+        </div>
+    </header>
+
+    <div class="container">
+        <div id="legislationList">
+            <div class="loading">Loading legislation...</div>
+        </div>
+    </div>
+
+    <script>
+        const sponsorName = {{ sponsor_name|tojson }};
+
+        // Load legislation for this sponsor
+        fetch(`/api/sponsor/${encodeURIComponent(sponsorName)}`)
+            .then(response => response.json())
+            .then(data => {
+                displayLegislation(data);
+            })
+            .catch(error => {
+                document.getElementById('legislationList').innerHTML =
+                    '<div class="no-data">Error loading legislation</div>';
+            });
+
+        function displayLegislation(data) {
+            const listDiv = document.getElementById('legislationList');
+            const subtitle = document.getElementById('subtitle');
+
+            if (data.count === 0) {
+                listDiv.innerHTML = '<div class="no-data">No legislation found for this councilmember</div>';
+                subtitle.textContent = 'No sponsored legislation found';
+                return;
+            }
+
+            // Update subtitle
+            subtitle.textContent = `${data.count.toLocaleString()} sponsored item${data.count !== 1 ? 's' : ''}`;
+
+            let html = '';
+
+            data.data.forEach(item => {
+                const typeBadge = item.legislationTypeName ?
+                    `<span class="type-badge">${escapeHtml(item.legislationTypeName)}</span>` : '';
+
+                // Show co-sponsors if any (excluding the main sponsor and invalid patterns)
+                const coSponsors = item.sponsors && item.sponsors.length > 1 ?
+                    item.sponsors.filter(s =>
+                        s !== sponsorName &&
+                        !s.toUpperCase().includes(' AS SUBSTITUTED BY ') &&
+                        !s.toUpperCase().includes(' AS AMENDED BY ')
+                    ) : [];
+                const coSponsorText = coSponsors.length > 0 ?
+                    `<div class="co-sponsors">Co-sponsored with: ${coSponsors.map(s => escapeHtml(s)).join(', ')}</div>` : '';
+
+                const charterNote = item.isCharterAmendment ?
+                    `<span class="charter-amendment-note">Charter Amendment</span>` : '';
+
+                const claimBadge = item.claimType ?
+                    `<span class="claim-badge-${escapeHtml(item.claimType)}">Claim: ${escapeHtml(item.claimType)}</span>` : '';
+
+                html += `
+                    <div class="legislation-item">
+                        <div class="legislation-header">
+                            <div class="legislation-number">${escapeHtml(item.number || 'N/A')}${typeBadge}${charterNote}${claimBadge}</div>
+                            <div class="legislation-date">${item.date}</div>
+                        </div>
+                        <div class="legislation-description">${escapeHtml(item.description || 'No description')}</div>
+                        ${coSponsorText}
+                        ${item.finalAction ? `<div class="legislation-date" style="margin-top: 0.5rem;"><strong>Final Action:</strong> ${escapeHtml(item.finalAction)}</div>` : ''}
+                        ${item.meetingDocId ? `<a href="/legislation/${item.meetingDocId}" class="pdf-link">View Details →</a>` : ''}
+                        ${item.meetingDocId ? `<a href="https://atlantacityga.iqm2.com/Citizens/Detail_LegiFile.aspx?ID=${item.meetingDocId}" target="_blank" class="pdf-link" style="margin-left: 1rem;">ELMS ID: ${item.meetingDocId} →</a>` : ''}
+                        ${item.pdfUrl ? `<a href="${item.pdfUrl}" target="_blank" class="pdf-link" style="margin-left: 1rem;">PDF →</a>` : ''}
+                    </div>
+                `;
+            });
+
+            listDiv.innerHTML = html;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>

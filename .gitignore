@@ -1,0 +1,52 @@
+# Virtual environment
+.venv/
+venv/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Downloaded/scraped data directories
+meeting_dates/
+api_downloads/
+legislation_details/
+
+# PDF files
+*.pdf
+
+# OCR output
+ocr_output_local/
+ocr_logs/
+ocr_live.log
+
+# Data files (scraped/generated JSON, CSV, DB, TXT data)
+*.json
+*.csv
+*.db
+*.txt
+!requirements.txt
+
+# Log files
+*.log
+logs/
+
+# Scraped HTML
+page_source.html
+
+# Progress tracking
+download_progress.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# macOS
+.DS_Store
+
+# Claude
+.claude/

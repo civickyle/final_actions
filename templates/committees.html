@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Committees - Atlanta City Council Legislation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: #2c3e50;
+            color: white;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .back-link {
+            color: #bdc3c7;
+            text-decoration: none;
+            display: inline-block;
+            margin-bottom: 0.5rem;
+        }
+
+        .back-link:hover {
+            color: white;
+        }
+
+        .subtitle {
+            color: #bdc3c7;
+            font-size: 1rem;
+        }
+
+        .committees-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .committee-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-decoration: none;
+            color: #333;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .committee-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .committee-name {
+            font-weight: bold;
+            font-size: 1.1rem;
+            color: #2c3e50;
+        }
+
+        .committee-count {
+            background: #27ae60;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+
+        .committee-status {
+            font-size: 0.85rem;
+            color: #7f8c8d;
+            margin-top: 0.25rem;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #7f8c8d;
+        }
+
+        .stats {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .stats h2 {
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+        }
+
+        .stats p {
+            color: #7f8c8d;
+        }
+
+        .sort-controls {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .sort-label {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .sort-select {
+            flex: 1;
+            max-width: 300px;
+            padding: 0.75rem;
+            font-size: 1rem;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            background: white;
+            cursor: pointer;
+        }
+
+        .sort-select:focus {
+            outline: none;
+            border-color: #27ae60;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <a href="/" class="back-link">← Back to Home</a>
+            <h1>Committees</h1>
+            <p class="subtitle">Browse legislation by introducing committee</p>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="stats" id="stats" style="display: none;">
+            <h2 id="totalCommittees">-</h2>
+            <p>committees have introduced legislation</p>
+        </div>
+
+        <div class="sort-controls" id="sortControls" style="display: none;">
+            <label class="sort-label" for="sortSelect">Sort by:</label>
+            <select id="sortSelect" class="sort-select" onchange="changeSortOrder()">
+                <option value="count-desc">Item Count (High to Low)</option>
+                <option value="count-asc">Item Count (Low to High)</option>
+                <option value="name-asc">Name (A-Z)</option>
+                <option value="name-desc">Name (Z-A)</option>
+            </select>
+        </div>
+
+        <div id="committeesGrid">
+            <div class="loading">Loading committees...</div>
+        </div>
+    </div>
+
+    <script>
+        const STORAGE_KEY = 'committees_sort_preference';
+        let allCommittees = [];
+
+        // Load all committees with their legislation counts
+        fetch('/api/committees-with-counts')
+            .then(response => response.json())
+            .then(data => {
+                allCommittees = data.committees;
+
+                // Load saved sort preference
+                const savedSort = localStorage.getItem(STORAGE_KEY) || 'count-desc';
+                document.getElementById('sortSelect').value = savedSort;
+
+                // Apply sort and display
+                sortAndDisplay();
+
+                // Show controls
+                document.getElementById('sortControls').style.display = 'flex';
+            })
+            .catch(error => {
+                document.getElementById('committeesGrid').innerHTML =
+                    '<div class="loading">Error loading committees</div>';
+            });
+
+        function changeSortOrder() {
+            const sortValue = document.getElementById('sortSelect').value;
+
+            // Save preference to localStorage
+            localStorage.setItem(STORAGE_KEY, sortValue);
+
+            // Re-sort and display
+            sortAndDisplay();
+        }
+
+        function sortAndDisplay() {
+            const sortValue = document.getElementById('sortSelect').value;
+            const sortedCommittees = [...allCommittees];
+
+            // Sort based on selection
+            switch(sortValue) {
+                case 'count-desc':
+                    sortedCommittees.sort((a, b) => b.count - a.count);
+                    break;
+                case 'count-asc':
+                    sortedCommittees.sort((a, b) => a.count - b.count);
+                    break;
+                case 'name-asc':
+                    sortedCommittees.sort((a, b) => a.name.localeCompare(b.name));
+                    break;
+                case 'name-desc':
+                    sortedCommittees.sort((a, b) => b.name.localeCompare(a.name));
+                    break;
+            }
+
+            displayCommittees(sortedCommittees);
+        }
+
+        function displayCommittees(committees) {
+            const grid = document.getElementById('committeesGrid');
+            const stats = document.getElementById('stats');
+            const totalCommittees = document.getElementById('totalCommittees');
+
+            // Update stats
+            totalCommittees.textContent = committees.length;
+            stats.style.display = 'block';
+
+            // Build grid
+            let html = '<div class="committees-grid">';
+            committees.forEach(committee => {
+                const encodedName = encodeURIComponent(committee.name);
+                const status = committee.active ? 'Active' : 'Inactive';
+                const statusStyle = committee.active ? 'color: #27ae60;' : 'color: #e74c3c;';
+
+                html += `
+                    <a href="/committee/${encodedName}" class="committee-card">
+                        <div>
+                            <div class="committee-name">${escapeHtml(committee.name)}</div>
+                            <div class="committee-status" style="${statusStyle}">${status}</div>
+                        </div>
+                        <div class="committee-count">${committee.count.toLocaleString()}</div>
+                    </a>
+                `;
+            });
+            html += '</div>';
+
+            grid.innerHTML = html;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>

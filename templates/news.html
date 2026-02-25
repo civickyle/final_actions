@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>News Releases - Atlanta City Council</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: #2c3e50;
+            color: white;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+        }
+
+        .back-link {
+            color: #bdc3c7;
+            text-decoration: none;
+            display: inline-block;
+            margin-bottom: 0.5rem;
+        }
+
+        .back-link:hover {
+            color: white;
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            color: #bdc3c7;
+            font-size: 1rem;
+        }
+
+        .stats {
+            display: flex;
+            gap: 2rem;
+            justify-content: center;
+            margin: 2rem 0;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #3498db;
+        }
+
+        .stat-label {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+
+        .search-container {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+
+        .search-box {
+            display: flex;
+            gap: 1rem;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 0.75rem;
+            font-size: 1rem;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        button {
+            padding: 0.75rem 2rem;
+            font-size: 1rem;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #2980b9;
+        }
+
+        .news-item {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .news-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .news-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.75rem;
+        }
+
+        .news-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+        }
+
+        .news-title a {
+            color: #2c3e50;
+            text-decoration: none;
+        }
+
+        .news-title a:hover {
+            color: #3498db;
+        }
+
+        .news-date {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+            white-space: nowrap;
+        }
+
+        .news-id {
+            color: #95a5a6;
+            font-size: 0.85rem;
+        }
+
+        .news-preview {
+            color: #555;
+            line-height: 1.6;
+            margin-top: 0.5rem;
+        }
+
+        .news-link {
+            display: inline-block;
+            margin-top: 0.5rem;
+            color: #3498db;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+
+        .news-link:hover {
+            text-decoration: underline;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            margin: 2rem 0;
+        }
+
+        .page-link {
+            padding: 0.5rem 1rem;
+            background: white;
+            color: #3498db;
+            text-decoration: none;
+            border-radius: 4px;
+            border: 2px solid #3498db;
+            transition: all 0.3s;
+        }
+
+        .page-link:hover {
+            background: #3498db;
+            color: white;
+        }
+
+        .page-link.active {
+            background: #3498db;
+            color: white;
+        }
+
+        .page-link.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 3rem;
+            color: #7f8c8d;
+            background: white;
+            border-radius: 8px;
+        }
+
+        .filter-container {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+
+        .filter-buttons {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-top: 1rem;
+        }
+
+        .filter-btn {
+            padding: 0.75rem 1.5rem;
+            border: 2px solid #3498db;
+            background: white;
+            color: #3498db;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s;
+            font-size: 1rem;
+        }
+
+        .filter-btn:hover {
+            background: #3498db;
+            color: white;
+        }
+
+        .filter-btn.active {
+            background: #3498db;
+            color: white;
+        }
+
+        .type-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-left: 0.5rem;
+        }
+
+        .type-news-release {
+            background: #e8f4f8;
+            color: #2c5f7c;
+        }
+
+        .type-media-advisory {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .type-unknown {
+            background: #f0f0f0;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <a href="/" class="back-link">← Back to Home</a>
+            <h1>News Releases</h1>
+            <p class="subtitle">Atlanta City Council press releases and announcements</p>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Statistics -->
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-number">{{ total }}</div>
+                <div class="stat-label">Total Releases</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number">{{ stats.min_id }} - {{ stats.max_id }}</div>
+                <div class="stat-label">ID Range</div>
+            </div>
+        </div>
+
+        <!-- Search -->
+        <div class="search-container">
+            <h2>Search News</h2>
+            <form action="/news/search" method="get" class="search-box">
+                <input type="text" name="q" placeholder="Search news releases..." required>
+                <button type="submit">Search</button>
+            </form>
+        </div>
+
+        <!-- Type Filter -->
+        <div class="filter-container">
+            <h2>Filter by Type</h2>
+            <div class="filter-buttons">
+                <a href="/news" class="filter-btn {% if not type_filter %}active{% endif %}">
+                    All ({{ type_stats.get('News Release', 0) + type_stats.get('Media Advisory', 0) + type_stats.get('Unknown', 0) }})
+                </a>
+                <a href="/news?type=News Release" class="filter-btn {% if type_filter == 'News Release' %}active{% endif %}">
+                    📰 News Releases ({{ type_stats.get('News Release', 0) }})
+                </a>
+                <a href="/news?type=Media Advisory" class="filter-btn {% if type_filter == 'Media Advisory' %}active{% endif %}">
+                    📢 Media Advisories ({{ type_stats.get('Media Advisory', 0) }})
+                </a>
+                {% if type_stats.get('Unknown', 0) > 0 %}
+                <a href="/news?type=Unknown" class="filter-btn {% if type_filter == 'Unknown' %}active{% endif %}">
+                    ❓ Unknown ({{ type_stats.get('Unknown', 0) }})
+                </a>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- News List -->
+        {% if news %}
+        <div>
+            {% for item in news %}
+            <div class="news-item">
+                <div class="news-header">
+                    <div style="flex: 1;">
+                        <div class="news-title">
+                            <a href="/news/{{ item.id }}">{{ item.title }}</a>
+                            {% if item.type == 'News Release' %}
+                            <span class="type-badge type-news-release">News Release</span>
+                            {% elif item.type == 'Media Advisory' %}
+                            <span class="type-badge type-media-advisory">Media Advisory</span>
+                            {% elif item.type %}
+                            <span class="type-badge type-unknown">{{ item.type }}</span>
+                            {% endif %}
+                        </div>
+                        <div class="news-id">ID: {{ item.id }}</div>
+                    </div>
+                    <div class="news-date">{{ item.date }}</div>
+                </div>
+
+                {% if item.preview_text %}
+                <div class="news-preview">
+                    {{ item.preview_text }}
+                </div>
+                {% endif %}
+
+                <a href="/news/{{ item.id }}" class="news-link">Read Full Release →</a>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Pagination -->
+        {% if total_pages > 1 %}
+        <div class="pagination">
+            {% if page > 1 %}
+            <a href="/news?page={{ page - 1 }}" class="page-link">← Previous</a>
+            {% else %}
+            <span class="page-link disabled">← Previous</span>
+            {% endif %}
+
+            {% for p in range(1, total_pages + 1) %}
+                {% if p == page %}
+                <span class="page-link active">{{ p }}</span>
+                {% elif p == 1 or p == total_pages or (p >= page - 2 and p <= page + 2) %}
+                <a href="/news?page={{ p }}{% if type_filter %}&type={{ type_filter }}{% endif %}" class="page-link">{{ p }}</a>
+                {% elif p == page - 3 or p == page + 3 %}
+                <span class="page-link disabled">...</span>
+                {% endif %}
+            {% endfor %}
+
+            {% if page < total_pages %}
+            <a href="/news?page={{ page + 1 }}{% if type_filter %}&type={{ type_filter }}{% endif %}" class="page-link">Next →</a>
+            {% else %}
+            <span class="page-link disabled">Next →</span>
+            {% endif %}
+        </div>
+        {% endif %}
+        {% else %}
+        <div class="no-results">
+            <h2>No News Releases Found</h2>
+            <p>There are currently no news releases available.</p>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>

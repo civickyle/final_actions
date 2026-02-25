@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Results - News Releases</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: #2c3e50;
+            color: white;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+        }
+
+        .back-link {
+            color: #bdc3c7;
+            text-decoration: none;
+            display: inline-block;
+            margin-bottom: 0.5rem;
+        }
+
+        .back-link:hover {
+            color: white;
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            color: #bdc3c7;
+            font-size: 1rem;
+        }
+
+        .search-container {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+
+        .search-box {
+            display: flex;
+            gap: 1rem;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 0.75rem;
+            font-size: 1rem;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        button {
+            padding: 0.75rem 2rem;
+            font-size: 1rem;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #2980b9;
+        }
+
+        .results-header {
+            background: white;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .news-item {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .news-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.75rem;
+        }
+
+        .news-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+        }
+
+        .news-title a {
+            color: #2c3e50;
+            text-decoration: none;
+        }
+
+        .news-title a:hover {
+            color: #3498db;
+        }
+
+        .news-date {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+            white-space: nowrap;
+        }
+
+        .news-id {
+            color: #95a5a6;
+            font-size: 0.85rem;
+        }
+
+        .news-preview {
+            color: #555;
+            line-height: 1.6;
+            margin-top: 0.5rem;
+        }
+
+        .news-link {
+            display: inline-block;
+            margin-top: 0.5rem;
+            color: #3498db;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+
+        .news-link:hover {
+            text-decoration: underline;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 3rem;
+            color: #7f8c8d;
+            background: white;
+            border-radius: 8px;
+        }
+
+        .highlight {
+            background: #fff3cd;
+            padding: 2px 4px;
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <a href="/news" class="back-link">← Back to News</a>
+            <h1>Search Results</h1>
+            {% if query %}
+            <p class="subtitle">Results for "{{ query }}"</p>
+            {% endif %}
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Search Box -->
+        <div class="search-container">
+            <form action="/news/search" method="get" class="search-box">
+                <input type="text" name="q" placeholder="Search news releases..." value="{{ query }}" required>
+                <button type="submit">Search</button>
+            </form>
+        </div>
+
+        <!-- Results -->
+        {% if query %}
+            {% if results %}
+            <div class="results-header">
+                <strong>{{ results|length }} result{{ 's' if results|length != 1 else '' }} found</strong>
+            </div>
+
+            {% for item in results %}
+            <div class="news-item">
+                <div class="news-header">
+                    <div style="flex: 1;">
+                        <div class="news-title">
+                            <a href="/news/{{ item.id }}">{{ item.title }}</a>
+                        </div>
+                        <div class="news-id">ID: {{ item.id }}</div>
+                    </div>
+                    <div class="news-date">{{ item.date }}</div>
+                </div>
+
+                {% if item.content_text %}
+                <div class="news-preview">
+                    {{ item.content_text[:300] }}{% if item.content_text|length > 300 %}...{% endif %}
+                </div>
+                {% endif %}
+
+                <a href="/news/{{ item.id }}" class="news-link">Read Full Release →</a>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="no-results">
+                <h2>No Results Found</h2>
+                <p>No news releases match your search query.</p>
+                <p style="margin-top: 1rem;">Try different keywords or <a href="/news" style="color: #3498db;">browse all news</a>.</p>
+            </div>
+            {% endif %}
+        {% else %}
+        <div class="no-results">
+            <h2>Enter a Search Query</h2>
+            <p>Use the search box above to find news releases.</p>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>

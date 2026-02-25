@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics Dashboard - Atlanta City Council Legislation</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: #2c3e50;
+            color: white;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .back-link {
+            color: #bdc3c7;
+            text-decoration: none;
+            display: inline-block;
+            margin-bottom: 0.5rem;
+        }
+
+        .back-link:hover {
+            color: white;
+        }
+
+        .subtitle {
+            color: #bdc3c7;
+            font-size: 1rem;
+        }
+
+        /* Breadcrumb */
+        .breadcrumb {
+            background: white;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.95rem;
+            flex-wrap: wrap;
+        }
+
+        .breadcrumb-item {
+            color: #3498db;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .breadcrumb-item:hover {
+            text-decoration: underline;
+        }
+
+        .breadcrumb-separator {
+            color: #bdc3c7;
+        }
+
+        .breadcrumb-current {
+            color: #2c3e50;
+            font-weight: bold;
+        }
+
+        /* Summary Cards */
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #3498db;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+
+        /* Chart Containers */
+        .chart-container {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+
+        .chart-container h2 {
+            color: #2c3e50;
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+        }
+
+        .chart-container.large {
+            min-height: 400px;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 350px;
+        }
+
+        .charts-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+            gap: 1rem;
+        }
+
+        /* Drill-Down Grid */
+        .drill-down-section {
+            margin-top: 2rem;
+        }
+
+        .drill-down-section h2 {
+            color: #2c3e50;
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+        }
+
+        .drill-down-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .drill-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .drill-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            background: #f8f9fa;
+        }
+
+        .drill-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+        }
+
+        .drill-count {
+            font-size: 1.5rem;
+            color: #3498db;
+            font-weight: bold;
+        }
+
+        .drill-items-label {
+            font-size: 0.85rem;
+            color: #3498db;
+            margin-top: 0.1rem;
+        }
+
+        .drill-meetings {
+            font-size: 0.85rem;
+            color: #7f8c8d;
+            margin-top: 0.25rem;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #7f8c8d;
+        }
+
+        .error-message {
+            background: #e74c3c;
+            color: white;
+            padding: 1rem;
+            border-radius: 4px;
+            margin: 1rem 0;
+            text-align: center;
+        }
+
+        @media (max-width: 768px) {
+            .charts-row {
+                grid-template-columns: 1fr;
+            }
+
+            .drill-down-grid {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <a href="/" class="back-link">← Back to Home</a>
+            <h1>Analytics Dashboard</h1>
+            <p class="subtitle">Comprehensive legislation analysis from 1984 to present</p>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Breadcrumb Navigation -->
+        <div id="breadcrumb" class="breadcrumb">
+            <span class="breadcrumb-current">Loading...</span>
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="summary-cards">
+            <div class="stat-card">
+                <div class="stat-value" id="totalItems">-</div>
+                <div class="stat-label">Total Legislation Items</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="totalMeetings">-</div>
+                <div class="stat-label">Council Meetings</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="adoptionRate">-</div>
+                <div class="stat-label">Adoption Rate</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="dateRange">-</div>
+                <div class="stat-label">Date Range</div>
+            </div>
+        </div>
+
+        <!-- Timeline Chart -->
+        <div class="chart-container large">
+            <h2>Legislation Over Time</h2>
+            <div class="chart-wrapper">
+                <canvas id="timelineChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Breakdown Charts -->
+        <div class="charts-row">
+            <div class="chart-container">
+                <h2>Final Action Breakdown</h2>
+                <div class="chart-wrapper">
+                    <canvas id="actionChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-container">
+                <h2>Legislation Types</h2>
+                <div class="chart-wrapper">
+                    <canvas id="typeChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Drill-Down Section -->
+        <div id="drillDownSection" class="drill-down-section" style="display: none;">
+            <h2 id="drillDownTitle">Explore</h2>
+            <div id="drillDownGrid" class="drill-down-grid"></div>
+        </div>
+    </div>
+
+    <script>
+        // Color scheme
+        const COLORS = {
+            primary: '#3498db',
+            success: '#27ae60',
+            warning: '#f39c12',
+            danger: '#e74c3c',
+            purple: '#9b59b6',
+            gray: '#95a5a6',
+            teal: '#1abc9c',
+            orange: '#e67e22',
+            dark: '#34495e',
+            types: ['#3498db', '#9b59b6', '#1abc9c', '#e67e22', '#34495e', '#f39c12', '#e74c3c']
+        };
+
+        // Action color mapping
+        const ACTION_COLORS = {
+            'ADOPTED': COLORS.success,
+            'ADOPTED_CONSENT': '#2ecc71',
+            'ADOPTED_AMENDED': '#27ae60',
+            'ADOPTED_SUBSTITUTE': '#16a085',
+            'ADOPTED_SUBSTITUTE_AMENDED': '#138d75',
+            'ADVERSED': COLORS.danger,
+            'FILED': COLORS.warning,
+            'CONFIRMED': COLORS.teal,
+            'ACCEPTED': COLORS.purple,
+            'MISSING': COLORS.gray,
+            'OTHER': COLORS.dark
+        };
+
+        // Dashboard state
+        class DashboardState {
+            constructor() {
+                this.currentLevel = 'all';
+                this.currentFilter = null;
+                this.history = [];
+                this.data = null;
+                this.charts = {
+                    timeline: null,
+                    actions: null,
+                    types: null
+                };
+            }
+
+            async navigate(level, filter) {
+                // Save current state to history
+                if (this.currentLevel !== level || this.currentFilter !== filter) {
+                    this.history.push({
+                        level: this.currentLevel,
+                        filter: this.currentFilter
+                    });
+                }
+
+                // Update state
+                this.currentLevel = level;
+                this.currentFilter = filter;
+
+                // Load and render
+                await this.loadAndRender();
+            }
+
+            back() {
+                if (this.history.length > 0) {
+                    const prev = this.history.pop();
+                    this.currentLevel = prev.level;
+                    this.currentFilter = prev.filter;
+                    this.loadAndRender();
+                }
+            }
+
+            async loadAndRender() {
+                try {
+                    // Fetch data from API
+                    const params = new URLSearchParams({
+                        level: this.currentLevel
+                    });
+                    if (this.currentFilter) {
+                        params.append('filter', this.currentFilter);
+                    }
+
+                    const response = await fetch(`/api/dashboard/stats?${params}`);
+                    this.data = await response.json();
+
+                    // Render all components
+                    this.renderBreadcrumb();
+                    this.renderSummaryCards();
+                    this.renderCharts();
+                    this.renderDrillDown();
+                } catch (error) {
+                    console.error('Error loading dashboard data:', error);
+                    alert('Error loading dashboard data. Please try again.');
+                }
+            }
+
+            renderBreadcrumb() {
+                const breadcrumb = document.getElementById('breadcrumb');
+                let html = '<a class="breadcrumb-item" onclick="dashboardState.navigate(\'all\', null)">All Terms</a>';
+
+                if (this.currentLevel === 'term' && this.currentFilter) {
+                    html += ' <span class="breadcrumb-separator">›</span> ';
+                    html += `<span class="breadcrumb-current">${this.currentFilter}</span>`;
+                } else if (this.currentLevel === 'year' && this.currentFilter) {
+                    html += ' <span class="breadcrumb-separator">›</span> ';
+                    html += `<span class="breadcrumb-current">${this.currentFilter}</span>`;
+                } else if (this.currentLevel === 'month' && this.currentFilter) {
+                    const [year, month] = this.currentFilter.split('-');
+                    const monthName = new Date(year, parseInt(month) - 1, 1).toLocaleDateString('en-US', { month: 'long' });
+                    html += ' <span class="breadcrumb-separator">›</span> ';
+                    html += `<a class="breadcrumb-item" onclick="dashboardState.navigate('year', '${year}')">${year}</a>`;
+                    html += ' <span class="breadcrumb-separator">›</span> ';
+                    html += `<span class="breadcrumb-current">${monthName}</span>`;
+                } else if (this.currentLevel === 'all') {
+                    html = '<span class="breadcrumb-current">All Terms</span>';
+                }
+
+                breadcrumb.innerHTML = html;
+            }
+
+            renderSummaryCards() {
+                const summary = this.data.summary;
+
+                // Total items
+                document.getElementById('totalItems').textContent = summary.total_items.toLocaleString();
+
+                // Total meetings
+                document.getElementById('totalMeetings').textContent = summary.total_meetings.toLocaleString();
+
+                // Adoption rate (percentage of ADOPTED actions)
+                const adoptedCount = Object.entries(this.data.final_actions)
+                    .filter(([key]) => key.startsWith('ADOPTED'))
+                    .reduce((sum, [_, value]) => sum + value.count, 0);
+                const adoptionRate = summary.total_items > 0
+                    ? Math.round((adoptedCount / summary.total_items) * 100)
+                    : 0;
+                document.getElementById('adoptionRate').textContent = `${adoptionRate}%`;
+
+                // Date range
+                if (this.data.timeline && this.data.timeline.length > 0) {
+                    const firstPeriod = this.data.timeline[0].period;
+                    const lastPeriod = this.data.timeline[this.data.timeline.length - 1].period;
+                    document.getElementById('dateRange').textContent = `${firstPeriod} - ${lastPeriod}`;
+                } else {
+                    document.getElementById('dateRange').textContent = 'N/A';
+                }
+            }
+
+            renderCharts() {
+                // Destroy existing charts
+                if (this.charts.timeline) this.charts.timeline.destroy();
+                if (this.charts.actions) this.charts.actions.destroy();
+                if (this.charts.types) this.charts.types.destroy();
+
+                // Timeline Chart (Stacked Bar)
+                this.renderTimelineChart();
+
+                // Final Actions Chart (Doughnut)
+                this.renderActionsChart();
+
+                // Legislation Types Chart (Bar)
+                this.renderTypesChart();
+            }
+
+            renderTimelineChart() {
+                const ctx = document.getElementById('timelineChart').getContext('2d');
+                const timeline = this.data.timeline || [];
+
+                // Get all unique action types
+                const actionTypes = new Set();
+                timeline.forEach(item => {
+                    Object.keys(item.actions).forEach(action => actionTypes.add(action));
+                });
+
+                // Create datasets
+                const datasets = Array.from(actionTypes).map(action => ({
+                    label: action.replace(/_/g, ' '),
+                    data: timeline.map(item => item.actions[action] || 0),
+                    backgroundColor: ACTION_COLORS[action] || COLORS.gray,
+                    stack: 'Stack 0'
+                }));
+
+                this.charts.timeline = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: timeline.map(item => item.period),
+                        datasets: datasets
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        onClick: (event, elements) => {
+                            if (elements.length > 0) {
+                                const index = elements[0].index;
+                                const period = timeline[index].period;
+                                const nextLevel = this.getNextLevel();
+                                if (nextLevel) {
+                                    this.navigate(nextLevel, period);
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                stacked: true,
+                                grid: { display: false }
+                            },
+                            y: {
+                                stacked: true,
+                                beginAtZero: true,
+                                grid: { color: '#e9ecef' }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                                labels: { boxWidth: 12, font: { size: 11 } }
+                            },
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false
+                            }
+                        }
+                    }
+                });
+            }
+
+            renderActionsChart() {
+                const ctx = document.getElementById('actionChart').getContext('2d');
+                const actions = this.data.final_actions || {};
+
+                const labels = Object.keys(actions).map(key => key.replace(/_/g, ' '));
+                const data = Object.values(actions).map(item => item.count);
+                const colors = Object.keys(actions).map(key => ACTION_COLORS[key] || COLORS.gray);
+
+                this.charts.actions = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            data: data,
+                            backgroundColor: colors,
+                            borderWidth: 2,
+                            borderColor: '#fff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'right',
+                                labels: { boxWidth: 12, font: { size: 11 } }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const label = context.label || '';
+                                        const value = context.parsed || 0;
+                                        const percentage = actions[Object.keys(actions)[context.dataIndex]].percentage;
+                                        return `${label}: ${value.toLocaleString()} (${percentage}%)`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            renderTypesChart() {
+                const ctx = document.getElementById('typeChart').getContext('2d');
+                const types = this.data.legislation_types || {};
+
+                const labels = Object.keys(types);
+                const data = Object.values(types).map(item => item.count);
+
+                this.charts.types = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Count',
+                            data: data,
+                            backgroundColor: COLORS.types.slice(0, labels.length),
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: {
+                                beginAtZero: true,
+                                grid: { color: '#e9ecef' }
+                            },
+                            y: {
+                                grid: { display: false }
+                            }
+                        },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const value = context.parsed.x || 0;
+                                        const percentage = types[context.label].percentage;
+                                        return `${value.toLocaleString()} items (${percentage}%)`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            renderDrillDown() {
+                const drillDown = this.data.drill_down || [];
+                const section = document.getElementById('drillDownSection');
+                const grid = document.getElementById('drillDownGrid');
+                const title = document.getElementById('drillDownTitle');
+
+                if (drillDown.length === 0) {
+                    section.style.display = 'none';
+                    return;
+                }
+
+                section.style.display = 'block';
+
+                // Set title based on current level
+                const titleMap = {
+                    'all': 'Explore by Council Term',
+                    'term': 'Explore by Year',
+                    'year': 'Explore by Month',
+                    'month': 'Explore by Meeting Date'
+                };
+                title.textContent = titleMap[this.currentLevel] || 'Explore';
+
+                // Render cards
+                grid.innerHTML = drillDown.map(item => {
+                    let count = 0;
+                    let meetings = 0;
+
+                    // For council terms (level "all"), aggregate years within the term
+                    if (this.currentLevel === 'all' && item.type === 'term') {
+                        // Parse term range like "2022-2025"
+                        const [startYear, endYear] = item.value.split('-').map(Number);
+                        // Sum up all years in this term
+                        for (let year = startYear; year <= endYear; year++) {
+                            const yearItem = this.data.timeline.find(t => t.period === year.toString());
+                            if (yearItem) {
+                                count += yearItem.total_items;
+                                meetings += yearItem.meetings;
+                            }
+                        }
+                    } else {
+                        // For other levels, direct lookup
+                        const timelineItem = this.data.timeline.find(t => t.period === item.value);
+                        count = timelineItem ? timelineItem.total_items : 0;
+                        meetings = timelineItem ? timelineItem.meetings : 0;
+                    }
+
+                    return `
+                        <div class="drill-card" onclick="dashboardState.drillInto('${item.value}')">
+                            <div class="drill-title">${escapeHtml(item.label)}</div>
+                            <div class="drill-count">${count.toLocaleString()}</div>
+                            <div class="drill-items-label">legislative items</div>
+                            <div class="drill-meetings">${meetings} meeting${meetings !== 1 ? 's' : ''}</div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            drillInto(value) {
+                const nextLevel = this.getNextLevel();
+                if (nextLevel) {
+                    this.navigate(nextLevel, value);
+                }
+            }
+
+            getNextLevel() {
+                const levelMap = {
+                    'all': 'term',
+                    'term': 'year',
+                    'year': 'month',
+                    'month': null  // No further drilling
+                };
+                return levelMap[this.currentLevel];
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Initialize dashboard
+        const dashboardState = new DashboardState();
+
+        // Load initial data
+        window.addEventListener('DOMContentLoaded', () => {
+            dashboardState.navigate('all', null);
+        });
+    </script>
+</body>
+</html>

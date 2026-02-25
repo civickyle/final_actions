@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Office Timeline - Atlanta City Council Legislation</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+        }
+
+        header {
+            background: #2c3e50;
+            color: white;
+            padding: 1.5rem 0;
+            margin-bottom: 1.5rem;
+        }
+
+        .header-inner, .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .container { padding-bottom: 40px; }
+
+        .back-link { color: #bdc3c7; text-decoration: none; font-size: 0.9rem; }
+        .back-link:hover { color: white; }
+
+        h1 { font-size: 1.8rem; margin-bottom: 0.2rem; }
+        .subtitle { color: #bdc3c7; font-size: 0.875rem; }
+
+        /* ── Toolbar ── */
+        .zoom-bar {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+            padding: 0.75rem 1rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .zoom-bar-row1 {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .year-label {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #2c3e50;
+            min-width: 36px;
+            white-space: nowrap;
+        }
+
+        .year-label.end { text-align: right; }
+
+        /* ── Dual-handle range slider ── */
+        .dual-range-wrap {
+            flex: 1;
+            position: relative;
+            height: 28px;
+            display: flex;
+            align-items: center;
+        }
+
+        .dual-track {
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: #e0e0e0;
+            border-radius: 2px;
+        }
+
+        .dual-fill {
+            position: absolute;
+            height: 100%;
+            background: #2c3e50;
+            border-radius: 2px;
+        }
+
+        .dual-range {
+            position: absolute;
+            width: 100%;
+            height: 4px;
+            background: transparent;
+            pointer-events: none;
+            -webkit-appearance: none;
+            appearance: none;
+            outline: none;
+        }
+
+        .dual-range::-webkit-slider-runnable-track { background: transparent; }
+        .dual-range::-moz-range-track              { background: transparent; }
+
+        .dual-range::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            pointer-events: all;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #2c3e50;
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 1px 5px rgba(0,0,0,0.3);
+        }
+
+        .dual-range::-moz-range-thumb {
+            pointer-events: all;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #2c3e50;
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 1px 5px rgba(0,0,0,0.3);
+            border: none;
+        }
+
+        .dual-range:focus::-webkit-slider-thumb { outline: 2px solid #3498db; outline-offset: 1px; }
+
+        /* ── Preset row ── */
+        .zoom-bar-row2 {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            justify-content: flex-end;
+        }
+
+        .zoom-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #95a5a6;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-right: 0.1rem;
+        }
+
+        .zoom-preset {
+            padding: 0.18rem 0.6rem;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            font-size: 0.72rem;
+            cursor: pointer;
+            background: white;
+            color: #555;
+        }
+
+        .zoom-preset:hover { background: #ecf0f1; }
+        .zoom-preset.active { background: #2c3e50; color: white; border-color: #2c3e50; }
+
+        /* ── Chart card ── */
+        .chart-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 1.5rem;
+            overflow: hidden;
+        }
+
+        /* ── Year ruler ── */
+        .ruler-row {
+            display: flex;
+            position: sticky;
+            top: 0;
+            z-index: 30;
+            background: white;
+            border-bottom: 2px solid #2c3e50;
+            height: 30px;
+        }
+
+        .ruler-spacer {
+            flex-shrink: 0;
+            background: white;
+            border-right: 2px solid #ecf0f1;
+        }
+
+        .ruler-ticks {
+            flex: 1;
+            position: relative;
+            height: 30px;
+            overflow: hidden;
+        }
+
+        /* ── Section headers ── */
+        .section-row {
+            display: flex;
+            background: #ecf0f1;
+            border-bottom: 1px solid #ccc;
+            height: 24px;
+            align-items: center;
+        }
+
+        .section-name {
+            flex-shrink: 0;
+            padding: 0 12px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            color: #7f8c8d;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            border-right: 2px solid #ccc;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            position: sticky;
+            left: 0;
+            background: #ecf0f1;
+            z-index: 20;
+        }
+
+        .section-bg {
+            flex: 1;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* ── Office rows ── */
+        .office-row {
+            display: flex;
+            border-bottom: 1px solid #f0f0f0;
+            height: 38px;
+        }
+
+        .office-row:hover { background: #fafafa; }
+
+        .office-label {
+            flex-shrink: 0;
+            padding: 0 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #2c3e50;
+            border-right: 2px solid #ecf0f1;
+            display: flex;
+            align-items: center;
+            white-space: nowrap;
+            position: sticky;
+            left: 0;
+            background: white;
+            z-index: 10;
+            height: 38px;
+        }
+
+        .office-row:hover .office-label { background: #fafafa; }
+
+        .office-chart {
+            flex: 1;
+            position: relative;
+            height: 38px;
+            overflow: hidden;
+        }
+
+        /* ── Gantt bars ── */
+        .gantt-bar {
+            position: absolute;
+            height: 24px;
+            top: 7px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            padding: 0 7px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: white;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            text-decoration: none;
+            cursor: pointer;
+            transition: filter 0.12s;
+            z-index: 5;
+        }
+
+        .gantt-bar:hover {
+            filter: brightness(1.15);
+            z-index: 20;
+        }
+
+        /* ── Tooltip ── */
+        #tooltip {
+            position: fixed;
+            background: rgba(30, 39, 46, 0.97);
+            color: white;
+            padding: 0.45rem 0.7rem;
+            border-radius: 6px;
+            font-size: 0.78rem;
+            pointer-events: none;
+            z-index: 1000;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.35);
+            display: none;
+            line-height: 1.45;
+        }
+
+        #tooltip .tt-name   { font-weight: 700; }
+        #tooltip .tt-office { color: #bdc3c7; font-size: 0.72rem; }
+        #tooltip .tt-dates  { color: #ecf0f1; font-size: 0.72rem; }
+
+        /* ── Unknown section ── */
+        .unknown-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 1.25rem 1.5rem;
+        }
+
+        .unknown-card h3 {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #95a5a6;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin-bottom: 0.875rem;
+        }
+
+        .unknown-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+
+        .unknown-chip {
+            background: #f0f3f4;
+            color: #555;
+            padding: 0.25rem 0.65rem;
+            border-radius: 20px;
+            font-size: 0.78rem;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .unknown-chip:hover { background: #dce0e1; }
+        .unknown-chip .yrs { color: #aaa; font-size: 0.7rem; }
+
+        .loading {
+            padding: 3rem;
+            text-align: center;
+            color: #95a5a6;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="header-inner">
+        <a href="/councilmembers" class="back-link">← Councilmembers</a>
+        <h1>Office Timeline</h1>
+        <p class="subtitle">Council seats over time, grouped by office</p>
+    </div>
+</header>
+
+<div class="container">
+    <!-- Toolbar -->
+    <div class="zoom-bar">
+        <div class="zoom-bar-row1">
+            <span class="year-label" id="startLabel">1984</span>
+            <div class="dual-range-wrap">
+                <div class="dual-track">
+                    <div class="dual-fill" id="dualFill"></div>
+                </div>
+                <input type="range" id="startSlider" class="dual-range">
+                <input type="range" id="endSlider"   class="dual-range">
+            </div>
+            <span class="year-label end" id="endLabel">2027</span>
+        </div>
+        <div class="zoom-bar-row2">
+            <span class="zoom-label">Show:</span>
+            <button class="zoom-preset active" data-preset="all">All</button>
+            <button class="zoom-preset" data-preset="20">Last 20yr</button>
+            <button class="zoom-preset" data-preset="10">Last 10yr</button>
+            <button class="zoom-preset" data-preset="4">Last 4yr</button>
+        </div>
+    </div>
+
+    <!-- Chart -->
+    <div id="chart-card" class="chart-card">
+        <div class="loading">Loading timeline…</div>
+    </div>
+
+    <!-- Members without office assigned -->
+    <div id="unknown-card" class="unknown-card" style="display:none;">
+        <h3>Office not yet assigned</h3>
+        <div id="unknown-chips" class="unknown-chips"></div>
+    </div>
+</div>
+
+<div id="tooltip"></div>
+
+<script>
+    // ── Constants ─────────────────────────────────────────────────────────────
+    const MIN_YEAR = 1984;
+    const LABEL_W  = 180;
+
+    // Two alternating hues — rows cycle through these
+    const ALT_HUES = [210, 20];
+
+    // Tint steps [saturation%, lightness%] — all dark enough for white text
+    const TINT_STEPS = [[72, 34], [64, 46], [57, 54], [76, 28], [61, 41]];
+
+    function rowTintColor(rowIdx, memberIndex) {
+        const hue = ALT_HUES[rowIdx % ALT_HUES.length];
+        const [s, l] = TINT_STEPS[memberIndex % TINT_STEPS.length];
+        return `hsl(${hue}, ${s}%, ${l}%)`;
+    }
+
+    // ── View state ────────────────────────────────────────────────────────────
+    let cachedMembers = null;
+    let visibleStart  = MIN_YEAR;
+    let visibleEnd    = null;   // null = current year + 1
+
+    function getMaxYear()    { return new Date().getFullYear() + 1; }
+    function getVEnd()       { return visibleEnd ?? getMaxYear(); }
+    function getVY()         { return getVEnd() - visibleStart; }
+
+    function getChartWidth() {
+        const card = document.getElementById('chart-card');
+        return Math.max((card.clientWidth || window.innerWidth - 40) - LABEL_W, 200);
+    }
+
+    function yearToPct(yr) {
+        return (yr - MIN_YEAR) / (getMaxYear() - MIN_YEAR) * 100;
+    }
+
+    function dateToPx(dateStr, chartW) {
+        if (!dateStr) return null;
+        const d  = new Date(dateStr);
+        const yr = d.getFullYear() + (d.getMonth() + 1) / 12;
+        return (yr - visibleStart) / getVY() * chartW;
+    }
+
+    // ── Slider setup & sync ───────────────────────────────────────────────────
+    const startSlider = document.getElementById('startSlider');
+    const endSlider   = document.getElementById('endSlider');
+    const startLabel  = document.getElementById('startLabel');
+    const endLabel    = document.getElementById('endLabel');
+    const dualFill    = document.getElementById('dualFill');
+
+    function initSliders() {
+        const maxYr = getMaxYear();
+        [startSlider, endSlider].forEach(s => {
+            s.min  = MIN_YEAR;
+            s.max  = maxYr;
+            s.step = 1;
+        });
+        visibleStart = maxYr - 10;
+        visibleEnd   = null;
+        startSlider.value = visibleStart;
+        endSlider.value   = maxYr;
+        syncSliderUI();
+    }
+
+    function syncSliderUI() {
+        const maxYr   = getMaxYear();
+        const startPct = (visibleStart - MIN_YEAR) / (maxYr - MIN_YEAR) * 100;
+        const endPct   = (getVEnd()    - MIN_YEAR) / (maxYr - MIN_YEAR) * 100;
+        dualFill.style.left  = startPct + '%';
+        dualFill.style.width = (endPct - startPct) + '%';
+        startLabel.textContent = visibleStart;
+        endLabel.textContent   = getVEnd();
+
+        // Active preset
+        const span = getVY();
+        const maxSpan = maxYr - MIN_YEAR;
+        document.querySelectorAll('.zoom-preset').forEach(b => {
+            const p = b.dataset.preset;
+            const active = p === 'all'
+                ? (span >= maxSpan - 1 && visibleStart === MIN_YEAR)
+                : (parseInt(p) === span && getVEnd() === maxYr);
+            b.classList.toggle('active', active);
+        });
+
+        // Raise the thumb that was moved last so it stays on top
+        startSlider.style.zIndex = startSlider.value >= endSlider.value - 1 ? 4 : 3;
+        endSlider.style.zIndex   = endSlider.value   <= startSlider.value + 1 ? 4 : 3;
+    }
+
+    startSlider.addEventListener('input', () => {
+        let val = parseInt(startSlider.value);
+        if (val >= getVEnd()) { val = getVEnd() - 1; startSlider.value = val; }
+        visibleStart = val;
+        syncSliderUI();
+        if (cachedMembers) renderChart(cachedMembers);
+    });
+
+    endSlider.addEventListener('input', () => {
+        let val = parseInt(endSlider.value);
+        if (val <= visibleStart) { val = visibleStart + 1; endSlider.value = val; }
+        visibleEnd = val >= getMaxYear() ? null : val;
+        syncSliderUI();
+        if (cachedMembers) renderChart(cachedMembers);
+    });
+
+    document.querySelectorAll('.zoom-preset').forEach(b => {
+        b.addEventListener('click', () => {
+            const maxYr = getMaxYear();
+            const p = b.dataset.preset;
+            if (p === 'all') {
+                visibleStart = MIN_YEAR;
+                visibleEnd   = null;
+            } else {
+                const span = parseInt(p);
+                visibleStart = maxYr - span;
+                visibleEnd   = null;
+            }
+            startSlider.value = visibleStart;
+            endSlider.value   = getVEnd();
+            syncSliderUI();
+            if (cachedMembers) renderChart(cachedMembers);
+        });
+    });
+
+    // ── Office sort ───────────────────────────────────────────────────────────
+    function officeRank(o) {
+        if (!o) return [99, 0, ''];
+        const dm = o.match(/^District\s+(\d+)/i);
+        if (dm) return [0, parseInt(dm[1]), o];
+        const pm = o.match(/^Post\s+(\d+)/i);
+        if (pm) return [1, parseInt(pm[1]), o];
+        if (o === 'President') return [2, 0, o];
+        return [3, 0, o];
+    }
+
+    function sortOffices(names) {
+        return [...names].sort((a, b) => {
+            const [ra, na, sa] = officeRank(a);
+            const [rb, nb, sb] = officeRank(b);
+            if (ra !== rb) return ra - rb;
+            if (na !== nb) return na - nb;
+            return sa.localeCompare(sb);
+        });
+    }
+
+    function sectionFor(o) {
+        return ['Districts', 'At-Large', 'President', 'Other'][Math.min(officeRank(o)[0], 3)];
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+    function fmtYear(s) { return s ? new Date(s).getFullYear() : 'present'; }
+
+    function esc(s) {
+        return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // ── Render ────────────────────────────────────────────────────────────────
+    function renderChart(members) {
+        const now    = new Date();
+        const chartW = getChartWidth();
+        const vy     = getVY();
+        const vEnd   = getVEnd();
+
+        const todayYr = now.getFullYear() + (now.getMonth() + 1) / 12;
+        const todayPx = (todayYr - visibleStart) / vy * chartW;
+
+        // Tick interval: multiples of 4 aligned to election cycles
+        const tickStep  = vy <= 8 ? 4 : vy <= 20 ? 8 : 12;
+        const firstTick = Math.ceil((visibleStart - 2) / 4) * 4 + 2;
+
+        // Group by office
+        const officeMap      = {};
+        const unknownMembers = [];
+
+        for (const m of members) {
+            const allNull = (m.terms || []).every(t => !t.office);
+            if (allNull) { unknownMembers.push(m); continue; }
+            for (const t of (m.terms || [])) {
+                if (!t.office) continue;
+                if (!officeMap[t.office]) officeMap[t.office] = [];
+                officeMap[t.office].push({ member: m, term: t });
+            }
+        }
+
+        const sortedOffices = sortOffices(Object.keys(officeMap));
+        const sections = {};
+        for (const o of sortedOffices) {
+            const s = sectionFor(o);
+            if (!sections[s]) sections[s] = [];
+            sections[s].push(o);
+        }
+
+        // ── Build HTML ────────────────────────────────────────────────────────
+        let html = `<div>`;
+
+        // Ruler
+        html += `<div class="ruler-row">`;
+        html += `<div class="ruler-spacer" style="width:${LABEL_W}px;"></div>`;
+        html += `<div class="ruler-ticks">`;
+        for (let yr = firstTick; yr <= vEnd + tickStep; yr += 4) {
+            const px = (yr - visibleStart) / vy * chartW;
+            if (px < -20 || px > chartW + 20) continue;
+            const isMajor = (yr - firstTick) % tickStep === 0;
+            html += `<div style="position:absolute;left:${px}px;top:0;bottom:0;width:1px;background:${isMajor ? '#ddd' : '#ebebeb'};"></div>`;
+            if (isMajor) html += `<div style="position:absolute;left:${px}px;top:50%;transform:translate(-50%,-50%);font-size:0.67rem;color:#7f8c8d;white-space:nowrap;">${yr}</div>`;
+        }
+        if (todayPx >= 0 && todayPx <= chartW) {
+            html += `<div style="position:absolute;left:${todayPx}px;top:0;bottom:0;width:2px;background:rgba(231,76,60,0.45);pointer-events:none;"></div>`;
+        }
+        html += `</div></div>`;
+
+        // Sections + office rows
+        const sectionOrder = ['Districts', 'At-Large', 'President', 'Other'];
+        let rowIdx = 0;
+        for (const sec of sectionOrder) {
+            if (!sections[sec]) continue;
+
+            html += `<div class="section-row">`;
+            html += `<div class="section-name" style="width:${LABEL_W}px;">${esc(sec)}</div>`;
+            html += `<div class="section-bg">`;
+            for (let yr = firstTick; yr <= vEnd + tickStep; yr += 4) {
+                const px = (yr - visibleStart) / vy * chartW;
+                if (px < 0 || px > chartW) continue;
+                const isMajor = (yr - firstTick) % tickStep === 0;
+                html += `<div style="position:absolute;left:${px}px;top:0;bottom:0;width:1px;background:${isMajor ? '#d5d8dc' : '#e4e6e8'};pointer-events:none;"></div>`;
+            }
+            html += `</div></div>`;
+
+            for (const office of sections[sec]) {
+                // Assign tint index to each unique member chronologically
+                const memberTintIdx = {};
+                let tintIdx = 0;
+                for (const { member } of officeMap[office]) {
+                    if (!(member.name in memberTintIdx)) memberTintIdx[member.name] = tintIdx++;
+                }
+                const currentRowIdx = rowIdx++;
+
+                html += `<div class="office-row">`;
+                html += `<div class="office-label" style="width:${LABEL_W}px;">${esc(office)}</div>`;
+                html += `<div class="office-chart">`;
+
+                for (let yr = firstTick; yr <= vEnd + tickStep; yr += 4) {
+                    const px = (yr - visibleStart) / vy * chartW;
+                    if (px < 0 || px > chartW) continue;
+                    const isMajor = (yr - firstTick) % tickStep === 0;
+                    html += `<div style="position:absolute;left:${px}px;top:0;bottom:0;width:1px;background:${isMajor ? '#ebebeb' : '#f5f5f5'};pointer-events:none;"></div>`;
+                }
+                if (todayPx >= 0 && todayPx <= chartW) {
+                    html += `<div style="position:absolute;left:${todayPx}px;top:0;bottom:0;width:2px;background:rgba(231,76,60,0.18);pointer-events:none;"></div>`;
+                }
+
+                for (const { member, term } of officeMap[office]) {
+                    if (!term.start) continue;
+                    const startD = new Date(term.start);
+                    const startYr = startD.getFullYear() + (startD.getMonth() + 1) / 12;
+                    const endD   = term.end ? new Date(term.end) : null;
+                    const endYr  = endD ? endD.getFullYear() + (endD.getMonth() + 1) / 12 : todayYr;
+
+                    const x0 = (startYr - visibleStart) / vy * chartW;
+                    const x1 = (endYr   - visibleStart) / vy * chartW;
+
+                    if (x1 < 0 || x0 > chartW) continue;
+
+                    const w     = x1 - x0;
+                    const color = rowTintColor(currentRowIdx, memberTintIdx[member.name]);
+                    const yr0      = fmtYear(term.start);
+                    const yr1      = fmtYear(term.end);
+                    const dateStr  = yr0 === yr1 ? String(yr0) : `${yr0}–${yr1}`;
+                    const parts     = member.name.split(' ');
+                    const lastName  = parts.length > 1 ? parts[parts.length - 1] : parts[0];
+                    // Visible slice of the bar (clipped to chart area)
+                    const clampedX0 = Math.max(x0, 0);
+                    const visW      = Math.min(x0 + w, chartW) - clampedX0;
+                    const label     = visW > 80 ? member.name : visW > 34 ? lastName : '';
+                    // When bar starts off-screen, indent text so it appears inside the visible area
+                    const padLeft   = clampedX0 - x0 + 7;
+                    html += `<a href="/councilmember/${encodeURIComponent(member.name)}"
+                        class="gantt-bar"
+                        style="left:${x0}px;width:${w}px;background:${color};padding-left:${padLeft}px;"
+                        data-name="${esc(member.name)}"
+                        data-office="${esc(term.office)}"
+                        data-dates="${dateStr}"
+                    >${esc(label)}</a>`;
+                }
+
+                html += `</div></div>`;
+            }
+        }
+
+        html += `</div>`;
+        document.getElementById('chart-card').innerHTML = html;
+
+        // Unknown members section
+        const unknownCard  = document.getElementById('unknown-card');
+        const unknownChips = document.getElementById('unknown-chips');
+        if (unknownMembers.length) {
+            unknownCard.style.display = '';
+            const sorted = [...unknownMembers].sort((a, b) => {
+                const as = a.terms && a.terms[0] ? a.terms[0].start : '';
+                const bs = b.terms && b.terms[0] ? b.terms[0].start : '';
+                return as.localeCompare(bs);
+            });
+            unknownChips.innerHTML = sorted.map(m => {
+                const t0   = m.terms && m.terms[0];
+                const tEnd = m.terms && m.terms[m.terms.length - 1];
+                const yr0  = t0   && t0.start  ? new Date(t0.start).getFullYear()  : '?';
+                const yr1  = tEnd && tEnd.end   ? new Date(tEnd.end).getFullYear()  : 'present';
+                return `<a href="/councilmember/${encodeURIComponent(m.name)}" class="unknown-chip">${esc(m.name)}<span class="yrs">${yr0}–${yr1}</span></a>`;
+            }).join('');
+        } else {
+            unknownCard.style.display = 'none';
+        }
+
+        // Tooltip
+        const tt = document.getElementById('tooltip');
+        document.querySelectorAll('.gantt-bar').forEach(bar => {
+            bar.addEventListener('mouseenter', () => {
+                tt.innerHTML = `<div class="tt-name">${bar.dataset.name}</div><div class="tt-office">${bar.dataset.office}</div><div class="tt-dates">${bar.dataset.dates}</div>`;
+                tt.style.display = 'block';
+            });
+            bar.addEventListener('mousemove', e => {
+                tt.style.left = (e.clientX + 14) + 'px';
+                tt.style.top  = (e.clientY - 52) + 'px';
+            });
+            bar.addEventListener('mouseleave', () => { tt.style.display = 'none'; });
+        });
+    }
+
+    // Re-render on window resize
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => { if (cachedMembers) renderChart(cachedMembers); }, 100);
+    });
+
+    // ── Fetch & boot ──────────────────────────────────────────────────────────
+    fetch('/api/councilmembers-terms')
+        .then(r => r.json())
+        .then(d => {
+            cachedMembers = d.councilmembers || [];
+            initSliders();
+            renderChart(cachedMembers);
+        })
+        .catch(() => {
+            document.getElementById('chart-card').innerHTML = '<div class="loading">Error loading data.</div>';
+        });
+</script>
+</body>
+</html>

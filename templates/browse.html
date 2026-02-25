@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Browse by Date - Atlanta City Council Legislation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: #2c3e50;
+            color: white;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .back-link {
+            color: #bdc3c7;
+            text-decoration: none;
+            display: inline-block;
+            margin-bottom: 0.5rem;
+        }
+
+        .back-link:hover {
+            color: white;
+        }
+
+        .browse-container {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+
+        .year-selector {
+            margin-bottom: 2rem;
+        }
+
+        .decade-row {
+            margin-bottom: 1.5rem;
+        }
+
+        .decade-label {
+            font-weight: bold;
+            color: #7f8c8d;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .decade-years {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            gap: 0.5rem;
+        }
+
+        .year-button {
+            padding: 0.5rem 1rem;
+            background: #ecf0f1;
+            border: 2px solid transparent;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+        }
+
+        .year-button:hover {
+            background: #3498db;
+            color: white;
+        }
+
+        .year-button.active {
+            background: #2c3e50;
+            color: white;
+            border-color: #2c3e50;
+        }
+
+        .year-button.disabled {
+            background: #f8f9fa;
+            color: #bdc3c7;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .year-button.disabled:hover {
+            background: #f8f9fa;
+            color: #bdc3c7;
+        }
+
+        .dates-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 0.75rem;
+        }
+
+        .date-button {
+            padding: 0.75rem;
+            background: #ecf0f1;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .date-button:hover {
+            background: #3498db;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .legislation-list {
+            margin-top: 2rem;
+        }
+
+        .legislation-item {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .legislation-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .legislation-number {
+            font-weight: bold;
+            color: #2c3e50;
+            font-size: 1.1rem;
+        }
+
+        .type-badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            background: #3498db;
+            color: white;
+            border-radius: 3px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            margin-left: 0.5rem;
+        }
+
+        .legislation-id {
+            color: #7f8c8d;
+            font-size: 0.85rem;
+        }
+
+        .legislation-description {
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 0.5rem;
+        }
+
+        .legislation-date {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+
+        .pdf-link {
+            display: inline-block;
+            margin-top: 0.5rem;
+            color: #3498db;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+
+        .pdf-link:hover {
+            text-decoration: underline;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #7f8c8d;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 3rem;
+            color: #7f8c8d;
+        }
+
+        .charter-amendment-note {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            background: #f39c12;
+            color: white;
+            border-radius: 3px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            margin-left: 0.5rem;
+        }
+
+        .claim-badge-adversed {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            background: #95a5a6;
+            color: white;
+            border-radius: 3px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            margin-left: 0.5rem;
+        }
+
+        .claim-badge-settlement {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            background: #e74c3c;
+            color: white;
+            border-radius: 3px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            margin-left: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <a href="/" class="back-link">← Back to Home</a>
+            <h1>Browse Legislation by Date</h1>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="browse-container">
+            <h2>Select Year</h2>
+            <div class="year-selector" id="yearSelector"></div>
+
+            <div id="datesContainer" style="display: none;">
+                <h2>Select Date</h2>
+                <div class="dates-grid" id="datesGrid"></div>
+            </div>
+        </div>
+
+        <div id="legislationList"></div>
+    </div>
+
+    <script>
+        let allDates = {};
+        let currentYear = null;
+
+        // Load all dates
+        fetch('/api/dates')
+            .then(response => response.json())
+            .then(data => {
+                allDates = data.dates_by_year;
+                displayYears();
+            });
+
+        function displayYears() {
+            const yearSelector = document.getElementById('yearSelector');
+            const availableYears = Object.keys(allDates);
+            const availableYearsSet = new Set(availableYears);
+
+            // Find min and max years to determine which decades to show
+            const yearNums = availableYears.map(y => parseInt(y));
+            const minYear = Math.min(...yearNums);
+            const maxYear = Math.max(...yearNums);
+            const minDecade = Math.floor(minYear / 10) * 10;
+            const maxDecade = Math.floor(maxYear / 10) * 10;
+
+            // Build HTML with decade rows (most recent first)
+            let html = '';
+            for (let decade = maxDecade; decade >= minDecade; decade -= 10) {
+                const decadeLabel = `${decade}s`;
+                let decadeHtml = '';
+
+                // Create all 10 years in the decade (increasing from left to right)
+                for (let i = 0; i < 10; i++) {
+                    const year = decade + i;
+                    const yearStr = year.toString();
+
+                    if (availableYearsSet.has(yearStr)) {
+                        // Year has data - clickable button
+                        decadeHtml += `<button class="year-button" onclick="selectYear('${yearStr}')">${year}</button>`;
+                    } else {
+                        // Year has no data - disabled button
+                        decadeHtml += `<button class="year-button disabled" disabled>${year}</button>`;
+                    }
+                }
+
+                html += `
+                    <div class="decade-row">
+                        <div class="decade-label">${decadeLabel}</div>
+                        <div class="decade-years">
+                            ${decadeHtml}
+                        </div>
+                    </div>
+                `;
+            }
+
+            yearSelector.innerHTML = html;
+        }
+
+        function selectYear(year) {
+            currentYear = year;
+
+            // Update active year button
+            document.querySelectorAll('.year-button').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.textContent === year) {
+                    btn.classList.add('active');
+                }
+            });
+
+            // Show dates for this year
+            const datesContainer = document.getElementById('datesContainer');
+            const datesGrid = document.getElementById('datesGrid');
+            const dates = allDates[year];
+
+            datesGrid.innerHTML = dates.map(date => {
+                // Parse date manually to avoid timezone issues
+                const [year, month, day] = date.split('-');
+                const dateObj = new Date(year, month - 1, day);
+                const formatted = dateObj.toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric'
+                });
+                return `<button class="date-button" onclick="loadDate('${date}')">${formatted}</button>`;
+            }).join('');
+
+            datesContainer.style.display = 'block';
+            document.getElementById('legislationList').innerHTML = '';
+        }
+
+        function loadDate(dateStr) {
+            const listDiv = document.getElementById('legislationList');
+            listDiv.innerHTML = '<div class="loading">Loading legislation...</div>';
+
+            fetch(`/api/date/${dateStr}`)
+                .then(response => response.json())
+                .then(data => {
+                    displayLegislation(data);
+                })
+                .catch(error => {
+                    listDiv.innerHTML = '<div class="no-data">Error loading data</div>';
+                });
+        }
+
+        function displayLegislation(data) {
+            const listDiv = document.getElementById('legislationList');
+
+            if (data.count === 0) {
+                listDiv.innerHTML = '<div class="no-data">No legislation found for this date</div>';
+                return;
+            }
+
+            let html = `<h2>${data.count} Legislation Item${data.count !== 1 ? 's' : ''} on ${data.date}</h2>`;
+
+            data.data.forEach(item => {
+                // Format legislation date to remove time portion
+                const legDate = item.legislationDate ? item.legislationDate.split('T')[0] : null;
+                const typeBadge = item.legislationTypeName ?
+                    `<span class="type-badge">${escapeHtml(item.legislationTypeName)}</span>` : '';
+
+                // Filter out invalid sponsor patterns (substitution text)
+                const validSponsors = item.sponsors ? item.sponsors.filter(s =>
+                    !s.toUpperCase().includes(' AS SUBSTITUTED BY ') &&
+                    !s.toUpperCase().includes(' AS AMENDED BY ')
+                ) : [];
+
+                const sponsors = validSponsors.length > 0 ?
+                    `<div class="legislation-date"><strong>Sponsor${validSponsors.length > 1 ? 's' : ''}:</strong> ${validSponsors.map(s => `<a href="/councilmember/${encodeURIComponent(s)}" style="color: #3498db; text-decoration: none;">${escapeHtml(s)}</a>`).join(', ')}</div>` : '';
+
+                const charterNote = item.isCharterAmendment ?
+                    `<span class="charter-amendment-note">Charter Amendment</span>` : '';
+
+                const claimBadge = item.claimType ?
+                    `<span class="claim-badge-${escapeHtml(item.claimType)}">Claim: ${escapeHtml(item.claimType)}</span>` : '';
+
+                html += `
+                    <div class="legislation-item">
+                        <div class="legislation-header">
+                            <div class="legislation-number">${escapeHtml(item.number || 'N/A')}${typeBadge}${charterNote}${claimBadge}</div>
+                            <div class="legislation-id">ID: ${item.id}</div>
+                        </div>
+                        <div class="legislation-description">${escapeHtml(item.description || 'No description')}</div>
+                        ${sponsors}
+                        ${item.finalAction ? `<div class="legislation-date"><strong>Final Action:</strong> ${escapeHtml(item.finalAction)}</div>` : ''}
+                        ${legDate ? `<div class="legislation-date">Legislation Date: ${legDate}</div>` : ''}
+                        ${item.meetingDocId ? `<a href="/legislation/${item.meetingDocId}" class="pdf-link">View Details →</a>` : ''}
+                        ${item.meetingDocId ? `<a href="https://atlantacityga.iqm2.com/Citizens/Detail_LegiFile.aspx?ID=${item.meetingDocId}" target="_blank" class="pdf-link" style="margin-left: 1rem;">ELMS ID: ${item.meetingDocId} →</a>` : ''}
+                        ${item.pdfUrl ? `<a href="${item.pdfUrl}" target="_blank" class="pdf-link" style="margin-left: 1rem;">PDF →</a>` : ''}
+                    </div>
+                `;
+            });
+
+            listDiv.innerHTML = html;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>

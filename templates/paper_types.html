@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paper Type Analysis - Atlanta City Council Legislation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: #8e44ad;
+            color: white;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .back-link {
+            color: #ecf0f1;
+            text-decoration: none;
+            display: inline-block;
+            margin-bottom: 0.5rem;
+        }
+
+        .back-link:hover {
+            color: white;
+        }
+
+        .subtitle {
+            color: #ecf0f1;
+            font-size: 1rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .stat-percentage {
+            font-size: 1.2rem;
+            color: #7f8c8d;
+            margin-top: 0.5rem;
+        }
+
+        .committee-badge {
+            background: #27ae60;
+        }
+
+        .personal-badge {
+            background: #3498db;
+        }
+
+        .unknown-badge {
+            background: #95a5a6;
+        }
+
+        .info-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+
+        .info-card h2 {
+            color: #2c3e50;
+            margin-bottom: 1rem;
+        }
+
+        .info-card p {
+            color: #555;
+            line-height: 1.8;
+            margin-bottom: 1rem;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: #7f8c8d;
+        }
+
+        .breakdown-item {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 1rem;
+        }
+
+        .breakdown-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .breakdown-title {
+            font-weight: bold;
+            color: #2c3e50;
+            font-size: 1.1rem;
+        }
+
+        .breakdown-count {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #3498db;
+        }
+
+        .progress-bar {
+            height: 30px;
+            background: #ecf0f1;
+            border-radius: 15px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 0.9rem;
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <a href="/" class="back-link">← Back to Home</a>
+            <h1>Paper Type Analysis</h1>
+            <p class="subtitle">Committee Papers vs Personal Papers</p>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="info-card">
+            <h2>Understanding Paper Types</h2>
+            <p><strong>Committee Papers:</strong> Legislation introduced by one or more committees (e.g., Finance Committee, Zoning Committee). These may represent items that originated from committee work, but they are typically items prepared by the administration.</p>
+            <p><strong>Personal Papers:</strong> Legislation introduced by one or more councilmembers. These represent individual councilmember initiatives but are sometimes also prepared by the administration.</p>
+        </div>
+
+        <div id="stats" class="loading">Loading statistics...</div>
+    </div>
+
+    <script>
+        fetch('/api/paper-type-analysis')
+            .then(response => response.json())
+            .then(data => {
+                displayStats(data);
+            })
+            .catch(error => {
+                document.getElementById('stats').innerHTML = '<div class="loading">Error loading statistics</div>';
+            });
+
+        function displayStats(data) {
+            const statsDiv = document.getElementById('stats');
+
+            const total = data.total_items;
+            const committeeCount = data.committee_papers;
+            const personalCount = data.personal_papers;
+            const unknownCount = data.unknown_papers;
+
+            const committeePercent = ((committeeCount / total) * 100).toFixed(1);
+            const personalPercent = ((personalCount / total) * 100).toFixed(1);
+            const unknownPercent = ((unknownCount / total) * 100).toFixed(1);
+
+            let html = `
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-number">${total.toLocaleString()}</div>
+                        <div class="stat-label">Total Legislation Items</div>
+                    </div>
+                    <div class="stat-card committee-badge" style="color: white;">
+                        <div class="stat-number" style="color: white;">${committeeCount.toLocaleString()}</div>
+                        <div class="stat-label" style="color: rgba(255,255,255,0.9);">Committee Papers</div>
+                        <div class="stat-percentage" style="color: rgba(255,255,255,0.9);">${committeePercent}%</div>
+                    </div>
+                    <div class="stat-card personal-badge" style="color: white;">
+                        <div class="stat-number" style="color: white;">${personalCount.toLocaleString()}</div>
+                        <div class="stat-label" style="color: rgba(255,255,255,0.9);">Personal Papers</div>
+                        <div class="stat-percentage" style="color: rgba(255,255,255,0.9);">${personalPercent}%</div>
+                    </div>
+                </div>
+
+                <div class="breakdown-item">
+                    <div class="breakdown-header">
+                        <div class="breakdown-title">Committee Papers</div>
+                        <div class="breakdown-count">${committeeCount.toLocaleString()}</div>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill committee-badge" style="width: ${committeePercent}%">${committeePercent}%</div>
+                    </div>
+                </div>
+
+                <div class="breakdown-item">
+                    <div class="breakdown-header">
+                        <div class="breakdown-title">Personal Papers</div>
+                        <div class="breakdown-count">${personalCount.toLocaleString()}</div>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill personal-badge" style="width: ${personalPercent}%">${personalPercent}%</div>
+                    </div>
+                </div>
+            `;
+
+            if (unknownCount > 0) {
+                html += `
+                    <div class="breakdown-item">
+                        <div class="breakdown-header">
+                            <div class="breakdown-title">Unknown / No Sponsor</div>
+                            <div class="breakdown-count">${unknownCount.toLocaleString()}</div>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill unknown-badge" style="width: ${unknownPercent}%">${unknownPercent}%</div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            statsDiv.innerHTML = html;
+        }
+    </script>
+</body>
+</html>

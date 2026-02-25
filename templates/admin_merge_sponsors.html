@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Merge Sponsors - Admin</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: #c0392b;
+            color: white;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .back-link {
+            color: #ecf0f1;
+            text-decoration: none;
+            display: inline-block;
+            margin-bottom: 0.5rem;
+        }
+
+        .back-link:hover {
+            color: white;
+        }
+
+        .step-container {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+
+        .step-title {
+            font-size: 1.3rem;
+            color: #2c3e50;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #ecf0f1;
+        }
+
+        .search-box {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 0.75rem;
+            font-size: 1rem;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+        }
+
+        button {
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #2980b9;
+        }
+
+        button:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+        }
+
+        .sponsor-list {
+            display: grid;
+            gap: 0.5rem;
+        }
+
+        .sponsor-checkbox {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem;
+            background: #f8f9fa;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .sponsor-checkbox:hover {
+            background: #e9ecef;
+        }
+
+        .sponsor-checkbox input[type="checkbox"] {
+            margin-right: 1rem;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .sponsor-info {
+            flex: 1;
+        }
+
+        .sponsor-name {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .sponsor-count {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+            margin-left: 1rem;
+        }
+
+        .canonical-name-input {
+            width: 100%;
+            padding: 0.75rem;
+            font-size: 1rem;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+        }
+
+        .merge-button {
+            background: #e74c3c;
+            padding: 1rem 2rem;
+            font-size: 1.1rem;
+        }
+
+        .merge-button:hover {
+            background: #c0392b;
+        }
+
+        .preview {
+            background: #fff3cd;
+            padding: 1rem;
+            border-radius: 4px;
+            border: 2px solid #ffc107;
+            margin-bottom: 1rem;
+        }
+
+        .preview-title {
+            font-weight: bold;
+            color: #856404;
+            margin-bottom: 0.5rem;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #7f8c8d;
+        }
+
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 1rem;
+            border-radius: 4px;
+            border: 2px solid #c3e6cb;
+            margin-bottom: 1rem;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 1rem;
+            border-radius: 4px;
+            border: 2px solid #f5c6cb;
+            margin-bottom: 1rem;
+        }
+
+        #step2, #step3 {
+            display: none;
+        }
+
+        .selected-sponsors {
+            background: #e3f2fd;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+        }
+
+        .selected-sponsor-tag {
+            display: inline-block;
+            background: #2196f3;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            margin: 0.25rem;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <a href="/admin/sponsors" class="back-link">← Back to Edit Sponsors</a>
+            <h1>Merge Sponsor Names</h1>
+            <p style="color: #ecf0f1;">Consolidate different variations of the same person's name</p>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Step 1: Find sponsors -->
+        <div class="step-container" id="step1">
+            <div class="step-title">Step 1: Find Sponsor Variations</div>
+            <p style="margin-bottom: 1rem; color: #7f8c8d;">Search for a name to find all variations (e.g., "Ivory" will find "Ivory L. Young", "Ivory Lee Young JR.", etc.)</p>
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Search for sponsor name...">
+                <button onclick="searchSponsors()">Search</button>
+            </div>
+            <div id="searchResults"></div>
+        </div>
+
+        <!-- Step 2: Select variations to merge -->
+        <div class="step-container" id="step2">
+            <div class="step-title">Step 2: Select Variations to Merge</div>
+            <p style="margin-bottom: 1rem; color: #7f8c8d;">Select all name variations that represent the same person</p>
+            <div id="sponsorList"></div>
+            <button onclick="proceedToMerge()" style="margin-top: 1rem;">Continue to Merge →</button>
+        </div>
+
+        <!-- Step 3: Confirm and merge -->
+        <div class="step-container" id="step3">
+            <div class="step-title">Step 3: Choose Canonical Name and Merge</div>
+
+            <div class="selected-sponsors">
+                <strong>Merging these variations:</strong><br>
+                <div id="selectedVariations"></div>
+            </div>
+
+            <label for="canonicalName" style="display: block; font-weight: bold; margin-bottom: 0.5rem;">
+                Canonical Name (all variations will be replaced with this):
+            </label>
+            <input type="text" id="canonicalName" class="canonical-name-input" placeholder="Enter the canonical name...">
+
+            <div class="preview" id="preview" style="display: none;">
+                <div class="preview-title">⚠️ Preview</div>
+                <div id="previewContent"></div>
+            </div>
+
+            <div style="display: flex; gap: 1rem;">
+                <button onclick="backToStep2()">← Back</button>
+                <button class="merge-button" onclick="executeMerge()">Merge All Variations</button>
+            </div>
+
+            <div id="mergeStatus"></div>
+        </div>
+    </div>
+
+    <script>
+        let allSponsors = [];
+        let selectedSponsors = [];
+        let searchResults = [];
+
+        function searchSponsors() {
+            const query = document.getElementById('searchInput').value.trim().toLowerCase();
+            if (!query) {
+                alert('Please enter a search term');
+                return;
+            }
+
+            const resultsDiv = document.getElementById('searchResults');
+            resultsDiv.innerHTML = '<div class="loading">Searching...</div>';
+
+            fetch('/api/sponsors')
+                .then(response => response.json())
+                .then(data => {
+                    allSponsors = data.sponsors;
+                    searchResults = allSponsors.filter(s =>
+                        s.name.toLowerCase().includes(query)
+                    );
+
+                    if (searchResults.length === 0) {
+                        resultsDiv.innerHTML = '<p style="color: #7f8c8d; margin-top: 1rem;">No sponsors found matching that search</p>';
+                        document.getElementById('step2').style.display = 'none';
+                    } else {
+                        displaySponsorsForSelection(searchResults);
+                        document.getElementById('step2').style.display = 'block';
+                        resultsDiv.innerHTML = `<p style="color: #27ae60; margin-top: 1rem;">✓ Found ${searchResults.length} sponsor(s) - scroll down to select variations</p>`;
+                    }
+                })
+                .catch(error => {
+                    resultsDiv.innerHTML = '<p style="color: #e74c3c;">Error searching sponsors</p>';
+                });
+        }
+
+        function displaySponsorsForSelection(sponsors) {
+            const listDiv = document.getElementById('sponsorList');
+
+            let html = '';
+            sponsors.forEach((sponsor, index) => {
+                html += `
+                    <label class="sponsor-checkbox">
+                        <input type="checkbox" id="sponsor-${index}" value="${escapeHtml(sponsor.name)}" onchange="updateSelection()">
+                        <div class="sponsor-info">
+                            <span class="sponsor-name">${escapeHtml(sponsor.name)}</span>
+                            <span class="sponsor-count">${sponsor.count} item${sponsor.count !== 1 ? 's' : ''}</span>
+                        </div>
+                    </label>
+                `;
+            });
+
+            listDiv.innerHTML = html;
+        }
+
+        function updateSelection() {
+            selectedSponsors = [];
+            searchResults.forEach((sponsor, index) => {
+                const checkbox = document.getElementById(`sponsor-${index}`);
+                if (checkbox && checkbox.checked) {
+                    selectedSponsors.push(sponsor);
+                }
+            });
+        }
+
+        function proceedToMerge() {
+            if (selectedSponsors.length < 2) {
+                alert('Please select at least 2 variations to merge');
+                return;
+            }
+
+            // Show selected variations
+            const variationsDiv = document.getElementById('selectedVariations');
+            variationsDiv.innerHTML = selectedSponsors.map(s =>
+                `<span class="selected-sponsor-tag">${escapeHtml(s.name)} (${s.count})</span>`
+            ).join('');
+
+            // Set default canonical name to the most common one
+            const mostCommon = [...selectedSponsors].sort((a, b) => b.count - a.count)[0];
+            document.getElementById('canonicalName').value = mostCommon.name;
+
+            updatePreview();
+
+            document.getElementById('step3').style.display = 'block';
+            document.getElementById('step3').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function backToStep2() {
+            document.getElementById('step3').style.display = 'none';
+            document.getElementById('step2').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function updatePreview() {
+            const canonicalName = document.getElementById('canonicalName').value.trim();
+            if (!canonicalName) return;
+
+            const preview = document.getElementById('preview');
+            const content = document.getElementById('previewContent');
+
+            const totalItems = selectedSponsors.reduce((sum, s) => sum + s.count, 0);
+            const variations = selectedSponsors.filter(s => s.name !== canonicalName);
+
+            content.innerHTML = `
+                <strong>${totalItems.toLocaleString()} total items</strong> will be updated.<br>
+                ${variations.length > 0 ? `These variations will be renamed to "<strong>${escapeHtml(canonicalName)}</strong>":<br>` : ''}
+                ${variations.map(s => `• ${escapeHtml(s.name)} (${s.count} items)`).join('<br>')}
+            `;
+
+            preview.style.display = 'block';
+        }
+
+        // Update preview when canonical name changes
+        document.getElementById('canonicalName').addEventListener('input', updatePreview);
+
+        function executeMerge() {
+            const canonicalName = document.getElementById('canonicalName').value.trim();
+            if (!canonicalName) {
+                alert('Please enter a canonical name');
+                return;
+            }
+
+            if (!confirm(`This will replace all selected variations with "${canonicalName}". This action cannot be easily undone. Continue?`)) {
+                return;
+            }
+
+            const statusDiv = document.getElementById('mergeStatus');
+            statusDiv.innerHTML = '<div class="loading">Merging... This may take a minute...</div>';
+
+            const variationsToMerge = selectedSponsors.map(s => s.name);
+
+            fetch('/api/admin/merge-sponsors', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    variations: variationsToMerge,
+                    canonical_name: canonicalName
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    statusDiv.innerHTML = `
+                        <div class="success">
+                            <strong>✓ Merge Complete!</strong><br>
+                            Updated ${data.files_updated} file(s) and ${data.items_updated} item(s).<br>
+                            Backups created with .bak extension.
+                        </div>
+                    `;
+
+                    // Reset form
+                    setTimeout(() => {
+                        if (confirm('Merge successful! Reload page to start a new merge?')) {
+                            location.reload();
+                        }
+                    }, 2000);
+                } else {
+                    statusDiv.innerHTML = `
+                        <div class="error">
+                            <strong>Error:</strong> ${escapeHtml(data.error || 'Unknown error')}
+                        </div>
+                    `;
+                }
+            })
+            .catch(error => {
+                statusDiv.innerHTML = `
+                    <div class="error">
+                        <strong>Error:</strong> Failed to merge sponsors
+                    </div>
+                `;
+                console.error(error);
+            });
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Allow Enter key to search
+        document.getElementById('searchInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchSponsors();
+            }
+        });
+    </script>
+</body>
+</html>
