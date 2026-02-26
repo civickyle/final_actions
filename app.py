@@ -3,7 +3,7 @@
 Flask web application to browse and search Atlanta City Council legislation data.
 """
 
-from flask import Flask, render_template, request, jsonify, g, redirect, url_for
+from flask import Flask, render_template, request, jsonify, g, redirect, url_for, send_from_directory
 from pathlib import Path
 import json
 from datetime import datetime
@@ -15,6 +15,16 @@ from news_utils import strip_boilerplate, get_preview_text, get_editable_content
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'dev-secret-key-change-in-production'
+
+@app.after_request
+def suppress_password_managers(response):
+    """Add data-1p-ignore to all inputs to prevent 1Password overlay."""
+    if response.content_type and 'text/html' in response.content_type:
+        data = response.get_data(as_text=True)
+        snippet = '<script>document.querySelectorAll("input").forEach(i=>i.setAttribute("data-1p-ignore",""));new MutationObserver(m=>m.forEach(r=>r.addedNodes.forEach(n=>{if(n.querySelectorAll)n.querySelectorAll("input").forEach(i=>i.setAttribute("data-1p-ignore",""))}))).observe(document.body,{childList:true,subtree:true})</script>'
+        data = data.replace('</body>', snippet + '</body>')
+        response.set_data(data)
+    return response
 
 # Configure logging
 if not app.debug:
@@ -429,29 +439,43 @@ DASHBOARD_CACHE = {
 
 def refresh_dashboard_cache():
     """Pre-compute dashboard aggregations (runs in background thread)."""
-    print("Building dashboard cache...")
-    start_time = datetime.now()
+    import os
+    try:
+        print("Building dashboard cache...", flush=True)
+        start_time = datetime.now()
 
-    # Get all available dates
-    all_dates = load_all_dates()
-    years = sorted(set(d.split('-')[0] for d in all_dates))
-    min_year = int(years[0]) if years else 1984
-    max_year = int(years[-1]) if years else 2026
+        # Lower priority so OCR workers aren't starved and vice versa
+        try:
+            os.nice(10)
+        except OSError:
+            pass
 
-    # Calculate terms
-    terms = calculate_council_terms(min_year, max_year)
+        # Get all available dates
+        all_dates = load_all_dates()
+        years = sorted(set(d.split('-')[0] for d in all_dates))
+        min_year = int(years[0]) if years else 1984
+        max_year = int(years[-1]) if years else 2026
 
-    # Pre-compute all-time stats
-    all_stats = aggregate_legislation_data()
+        # Calculate terms
+        terms = calculate_council_terms(min_year, max_year)
+        print(f"  Terms calculated: {len(terms)}", flush=True)
 
-    # Store in cache
-    DASHBOARD_CACHE['last_updated'] = datetime.now()
-    DASHBOARD_CACHE['terms'] = terms
-    DASHBOARD_CACHE['all_stats'] = all_stats
-    DASHBOARD_CACHE['ready'] = True
+        # Pre-compute all-time stats
+        all_stats = aggregate_legislation_data()
+        print(f"  Stats aggregated: {all_stats['summary']}", flush=True)
 
-    elapsed = (datetime.now() - start_time).total_seconds()
-    print(f"Dashboard cache built in {elapsed:.2f} seconds")
+        # Store in cache
+        DASHBOARD_CACHE['last_updated'] = datetime.now()
+        DASHBOARD_CACHE['terms'] = terms
+        DASHBOARD_CACHE['all_stats'] = all_stats
+        DASHBOARD_CACHE['ready'] = True
+
+        elapsed = (datetime.now() - start_time).total_seconds()
+        print(f"Dashboard cache built in {elapsed:.2f} seconds", flush=True)
+    except Exception as e:
+        import traceback
+        print(f"ERROR building dashboard cache: {e}", flush=True)
+        traceback.print_exc()
 
 @app.route('/')
 def index():
@@ -1979,6 +2003,91 @@ def admin_logs():
     except Exception as e:
         app.logger.error(f"Error reading log file: {e}")
         return render_template('error.html', message=f'Error reading logs: {str(e)}'), 500
+
+# Full-text search routes
+try:
+    from legislation_search_db import LegislationSearchDB
+    FTS_DB_AVAILABLE = Path('legislation_fts.db').exists()
+except Exception as e:
+    print(f"Warning: Legislation search module not available: {e}")
+    FTS_DB_AVAILABLE = False
+
+def get_fts_db():
+    """Get or create a LegislationSearchDB instance for this request."""
+    if 'fts_db' not in g:
+        g.fts_db = LegislationSearchDB('legislation_fts.db')
+    return g.fts_db
+
+@app.teardown_appcontext
+def close_fts_db(error):
+    """Close the FTS database connection at the end of the request."""
+    fts_db = g.pop('fts_db', None)
+    if fts_db is not None:
+        fts_db.close()
+
+LOCAL_PDF_DIR = Path('/Volumes/Sandisk/Final Action Legislation \u2013 processed')
+
+@app.route('/pdf/<paper_number>')
+def serve_pdf(paper_number):
+    """Serve a processed PDF from local storage."""
+    # Sanitize: only allow alphanumeric characters
+    if not re.match(r'^[a-zA-Z0-9_-]+$', paper_number):
+        return 'Invalid paper number', 400
+    filename = f'{paper_number}.pdf'
+    if not (LOCAL_PDF_DIR / filename).exists():
+        return 'PDF not found', 404
+    return send_from_directory(LOCAL_PDF_DIR, filename)
+
+@app.route('/fulltext-search')
+def fulltext_search_page():
+    """Full-text search page."""
+    if not FTS_DB_AVAILABLE:
+        return render_template('error.html', message='Full-text search database not available. Run build_fts_index.py first.'), 503
+    return render_template('fulltext_search.html')
+
+@app.route('/api/fulltext-search')
+def api_fulltext_search():
+    """API endpoint for full-text search across OCR-extracted legislation text."""
+    if not FTS_DB_AVAILABLE:
+        return jsonify({'error': 'Full-text search database not available'}), 503
+
+    query = request.args.get('q', '').strip()
+    if not query:
+        return jsonify({'error': 'Query required'}), 400
+
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 20, type=int)
+    per_page = min(per_page, 100)  # Cap at 100
+    date_from = request.args.get('date_from', '')
+    date_to = request.args.get('date_to', '')
+    leg_type = request.args.get('type', '')
+    sort = request.args.get('sort', 'relevance')
+
+    offset = (page - 1) * per_page
+
+    try:
+        db = get_fts_db()
+        result = db.search(
+            query,
+            limit=per_page,
+            offset=offset,
+            date_from=date_from or None,
+            date_to=date_to or None,
+            leg_type=leg_type or None,
+            sort=sort,
+        )
+
+        return jsonify({
+            'query': query,
+            'total': result['total'],
+            'page': page,
+            'per_page': per_page,
+            'results': result['results'],
+        })
+
+    except Exception as e:
+        app.logger.error(f"Full-text search error: {e}")
+        return jsonify({'error': f'Search error: {str(e)}'}), 500
 
 # Build dashboard cache in background thread on startup
 import threading

@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Full-Text Search - Atlanta City Council Legislation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: #2c3e50;
+            color: white;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+        }
+
+        .back-link {
+            color: #bdc3c7;
+            text-decoration: none;
+            display: inline-block;
+            margin-bottom: 0.5rem;
+        }
+
+        .back-link:hover {
+            color: white;
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            color: #bdc3c7;
+            font-size: 1rem;
+        }
+
+        .search-container {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+
+        .search-box {
+            display: flex;
+            gap: 1rem;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 0.75rem;
+            font-size: 1rem;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        select {
+            padding: 0.75rem;
+            font-size: 1rem;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            background: white;
+        }
+
+        button {
+            padding: 0.75rem 2rem;
+            font-size: 1rem;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #2980b9;
+        }
+
+        .filters {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-top: 0.75rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid #f0f0f0;
+        }
+
+        .filters label {
+            font-size: 0.85rem;
+            color: #7f8c8d;
+            white-space: nowrap;
+        }
+
+        .filters select,
+        .filters input[type="text"] {
+            padding: 0.5rem 0.6rem;
+            font-size: 0.9rem;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            background: white;
+        }
+
+        .result-count {
+            margin-bottom: 1rem;
+            color: #7f8c8d;
+        }
+
+        .result-count strong {
+            color: #2c3e50;
+        }
+
+        .result-item {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.5rem;
+        }
+
+        .result-number {
+            font-weight: bold;
+            color: #2c3e50;
+            font-size: 1.1rem;
+        }
+
+        .result-number a {
+            color: #2c3e50;
+            text-decoration: none;
+        }
+
+        .result-number a:hover {
+            text-decoration: underline;
+        }
+
+        .type-badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            background: #3498db;
+            color: white;
+            border-radius: 3px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            margin-left: 0.5rem;
+        }
+
+        .result-date {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+
+        .result-description {
+            color: #555;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .result-snippet {
+            background: #fafafa;
+            border-left: 3px solid #3498db;
+            padding: 0.75rem 1rem;
+            margin: 0.5rem 0;
+            font-size: 0.9rem;
+            color: #444;
+            line-height: 1.7;
+        }
+
+        .result-snippet mark {
+            background: #fff3cd;
+            padding: 0.1rem 0.2rem;
+            border-radius: 2px;
+            font-weight: 600;
+        }
+
+        .result-meta {
+            font-size: 0.85rem;
+            color: #7f8c8d;
+            margin-top: 0.5rem;
+        }
+
+        .result-meta a {
+            color: #3498db;
+            text-decoration: none;
+        }
+
+        .result-meta a:hover {
+            text-decoration: underline;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #7f8c8d;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 3rem;
+            color: #7f8c8d;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 2rem;
+        }
+
+        .pagination button {
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+        }
+
+        .pagination button:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+        }
+
+        .pagination .page-info {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+            margin: 0 1rem;
+        }
+
+        .search-tip {
+            font-size: 0.85rem;
+            color: #7f8c8d;
+            margin-top: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <a href="/" class="back-link">&larr; Back to Home</a>
+            <h1>Full-Text Document Search</h1>
+            <p class="subtitle">Search across the full text of 71,000+ legislation PDFs</p>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="search-container">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Search document text (e.g., 'affordable housing', 'Beltline', 'water main')">
+                <button onclick="performSearch(1)">Search</button>
+            </div>
+            <div class="search-tip">
+                Tip: Use quotes for exact phrases, e.g. "tax increment financing". Use OR for alternatives, e.g. beltline OR belt line.
+            </div>
+            <div class="filters">
+                <label>Type</label>
+                <select id="searchType">
+                    <option value="">All Types</option>
+                    <option value="Resolution">Resolution</option>
+                    <option value="Ordinance">Ordinance</option>
+                    <option value="Communication">Communication</option>
+                    <option value="Report">Report</option>
+                    <option value="Transfer">Transfer</option>
+                </select>
+                <label>From</label>
+                <input type="text" id="dateFrom" placeholder="YYYY-MM-DD" style="width:10rem;">
+                <label>To</label>
+                <input type="text" id="dateTo" placeholder="YYYY-MM-DD" style="width:10rem;">
+                <label>Sort</label>
+                <select id="sortOrder">
+                    <option value="relevance">Relevance</option>
+                    <option value="date_desc">Newest First</option>
+                    <option value="date_asc">Oldest First</option>
+                </select>
+            </div>
+        </div>
+
+        <div id="results"></div>
+    </div>
+
+    <script>
+        let currentPage = 1;
+        const perPage = 20;
+
+        function performSearch(page) {
+            const query = document.getElementById('searchInput').value.trim();
+            if (!query) {
+                alert('Please enter a search term');
+                return;
+            }
+
+            currentPage = page || 1;
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<div class="loading">Searching...</div>';
+
+            const params = new URLSearchParams({
+                q: query,
+                page: currentPage,
+                per_page: perPage
+            });
+
+            const type = document.getElementById('searchType').value;
+            const dateFrom = document.getElementById('dateFrom').value;
+            const dateTo = document.getElementById('dateTo').value;
+            const sort = document.getElementById('sortOrder').value;
+
+            if (type) params.set('type', type);
+            if (dateFrom) params.set('date_from', dateFrom);
+            if (dateTo) params.set('date_to', dateTo);
+            if (sort && sort !== 'relevance') params.set('sort', sort);
+
+            fetch(`/api/fulltext-search?${params}`)
+                .then(r => {
+                    if (!r.ok) return r.json().then(d => { throw new Error(d.error || 'Search failed'); });
+                    return r.json();
+                })
+                .then(data => displayResults(data))
+                .catch(error => {
+                    resultsDiv.innerHTML = `<div class="no-results">Error: ${escapeHtml(error.message)}</div>`;
+                });
+        }
+
+        function displayResults(data) {
+            const resultsDiv = document.getElementById('results');
+
+            if (data.total === 0) {
+                resultsDiv.innerHTML = '<div class="no-results">No results found</div>';
+                return;
+            }
+
+            const totalPages = Math.ceil(data.total / data.per_page);
+            const start = (data.page - 1) * data.per_page + 1;
+            const end = Math.min(data.page * data.per_page, data.total);
+
+            let html = `<div class="result-count">Showing <strong>${start}-${end}</strong> of <strong>${data.total.toLocaleString()}</strong> results</div>`;
+
+            data.results.forEach(item => {
+                const typeBadge = item.legislation_type
+                    ? `<span class="type-badge">${escapeHtml(item.legislation_type)}</span>`
+                    : '';
+
+                const date = item.legislation_date || '';
+
+                const numberDisplay = item.legislation_number || item.paper_number;
+                const localPdfUrl = `/pdf/${encodeURIComponent(item.paper_number)}`;
+
+                const descText = item.description
+                    ? `<div class="result-description">${escapeHtml(truncate(item.description, 200))}</div>`
+                    : '';
+
+                const sponsors = item.sponsors && item.sponsors.length
+                    ? item.sponsors.map(s => `<a href="/councilmember/${encodeURIComponent(s)}">${escapeHtml(s)}</a>`).join(', ')
+                    : '';
+
+                const sponsorLine = sponsors
+                    ? `<span style="margin-left: 1rem;">Sponsors: ${sponsors}</span>`
+                    : '';
+
+                const finalAction = item.final_action
+                    ? `<span style="margin-left: 1rem;">Final Action: ${escapeHtml(item.final_action)}</span>`
+                    : '';
+
+                html += `
+                    <div class="result-item">
+                        <div class="result-header">
+                            <div class="result-number">
+                                <a href="${localPdfUrl}" target="_blank">${escapeHtml(numberDisplay)}</a>
+                                ${typeBadge}
+                            </div>
+                            <div class="result-date">${escapeHtml(date)}</div>
+                        </div>
+                        ${descText}
+                        <div class="result-snippet">${item.snippet || '<em>No text preview available</em>'}</div>
+                        <div class="result-meta">
+                            <a href="${localPdfUrl}" target="_blank">View PDF</a>
+                            ${sponsorLine}
+                            ${finalAction}
+                        </div>
+                    </div>
+                `;
+            });
+
+            // Pagination
+            html += `<div class="pagination">`;
+            html += `<button onclick="performSearch(${data.page - 1})" ${data.page <= 1 ? 'disabled' : ''}>Previous</button>`;
+            html += `<span class="page-info">Page ${data.page} of ${totalPages.toLocaleString()}</span>`;
+            html += `<button onclick="performSearch(${data.page + 1})" ${data.page >= totalPages ? 'disabled' : ''}>Next</button>`;
+            html += `</div>`;
+
+            resultsDiv.innerHTML = html;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function truncate(text, maxLen) {
+            if (!text || text.length <= maxLen) return text;
+            return text.substring(0, maxLen) + '...';
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        document.getElementById('searchInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                performSearch(1);
+            }
+        });
+
+        // Auto-search if query param present
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('q')) {
+            document.getElementById('searchInput').value = urlParams.get('q');
+            if (urlParams.get('type')) document.getElementById('searchType').value = urlParams.get('type');
+            if (urlParams.get('date_from')) document.getElementById('dateFrom').value = urlParams.get('date_from');
+            if (urlParams.get('date_to')) document.getElementById('dateTo').value = urlParams.get('date_to');
+            if (urlParams.get('sort')) document.getElementById('sortOrder').value = urlParams.get('sort');
+            performSearch(1);
+        }
+    </script>
+</body>
+</html>
