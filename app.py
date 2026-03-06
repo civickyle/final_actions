@@ -3,7 +3,7 @@
 Flask web application to browse and search Atlanta City Council legislation data.
 """
 
-from flask import Flask, render_template, request, jsonify, g, redirect, url_for, send_from_directory
+from flask import Flask, render_template, request, jsonify, g, redirect, url_for, send_from_directory, Response
 from pathlib import Path
 import json
 from datetime import datetime
@@ -12,9 +12,21 @@ import shutil
 import logging
 from logging.handlers import RotatingFileHandler
 from news_utils import strip_boilerplate, get_preview_text, get_editable_content
+from search_utils import normalize_text, prepare_simple_query
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'dev-secret-key-change-in-production'
+
+@app.after_request
+def add_noindex_header(response):
+    response.headers['X-Robots-Tag'] = 'noindex, nofollow'
+    return response
+
+
+@app.route('/robots.txt')
+def robots():
+    return Response("User-agent: *\nDisallow: /\n", mimetype='text/plain')
+
 
 @app.after_request
 def suppress_password_managers(response):
@@ -125,7 +137,7 @@ def search_all_data(query, search_field='all', leg_type=None, date_from=None, da
         List of matching items with date information
     """
     results = []
-    query_lower = query.lower()
+    q = prepare_simple_query(query)
     leg_type_lower = leg_type.lower() if leg_type else None
 
     for json_file in MEETING_DATES_DIR.rglob("*.json"):
@@ -153,14 +165,14 @@ def search_all_data(query, search_field='all', leg_type=None, date_from=None, da
                     match = False
 
                     if search_field in ['number', 'all']:
-                        number = item.get('number', '').lower()
-                        if query_lower in number:
+                        number = normalize_text(item.get('number', ''))
+                        if q in number:
                             match = True
-                            score += 10 if number == query_lower else 5
+                            score += 10 if number == q else 5
 
                     if search_field in ['description', 'all']:
-                        description = item.get('description', '').lower()
-                        count = description.count(query_lower)
+                        description = normalize_text(item.get('description', ''))
+                        count = description.count(q)
                         if count > 0:
                             match = True
                             score += count
@@ -671,6 +683,12 @@ def api_donations():
         })
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+
+@app.route('/admin')
+def admin_dashboard():
+    """Admin dashboard — links to all admin sections."""
+    return render_template('admin.html')
 
 
 @app.route('/admin/donations')
@@ -2089,10 +2107,62 @@ def api_fulltext_search():
         app.logger.error(f"Full-text search error: {e}")
         return jsonify({'error': f'Search error: {str(e)}'}), 500
 
+# ── PERSONAL PAPERS ──────────────────────────────────────────────────────────
+
+import personal_papers_db as pp_db
+
+pp_db.init_db()
+
+@app.route('/personal-papers')
+def personal_papers_list():
+    packages = pp_db.get_all_packages()
+    return render_template('personal_papers.html', packages=packages)
+
+
+@app.route('/personal-papers/<int:package_id>')
+def personal_papers_detail(package_id):
+    pkg = pp_db.get_package(package_id)
+    if not pkg:
+        return render_template('error.html', message='Package not found'), 404
+    items = pp_db.get_items(package_id)
+    return render_template('personal_papers_detail.html', pkg=pkg, items=items)
+
+
+@app.route('/personal-papers/<int:package_id>/pdf')
+def personal_papers_pdf(package_id):
+    pkg = pp_db.get_package(package_id)
+    if not pkg:
+        return 'PDF not found', 404
+    # Prefer the enriched (linked TOC) version when available
+    path_key = 'enriched_pdf_path' if pkg.get('enriched_pdf_path') else 'pdf_path'
+    if not pkg.get(path_key):
+        return 'PDF not found', 404
+    p = Path(pkg[path_key])
+    return send_from_directory(str(p.parent), p.name)
+
+
+@app.route('/personal-papers/<int:package_id>/toc')
+def personal_papers_toc(package_id):
+    pkg = pp_db.get_package(package_id)
+    if not pkg or not pkg.get('toc_pdf_path'):
+        return 'TOC PDF not found', 404
+    p = Path(pkg['toc_pdf_path'])
+    return send_from_directory(str(p.parent), p.name)
+
+
+@app.route('/personal-papers/items/<int:item_id>/pdf')
+def personal_papers_item_pdf(item_id):
+    item = pp_db.get_item(item_id)
+    if not item or not item.get('pdf_path'):
+        return 'PDF not found', 404
+    p = Path(item['pdf_path'])
+    return send_from_directory(str(p.parent), p.name)
+
+
 # Build dashboard cache in background thread on startup
 import threading
 _cache_thread = threading.Thread(target=refresh_dashboard_cache, daemon=True)
 _cache_thread.start()
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5001)
+    app.run(debug=True, host='0.0.0.0', port=5003)

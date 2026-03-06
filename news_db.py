@@ -10,6 +10,8 @@ import json
 from pathlib import Path
 from datetime import datetime
 
+from search_utils import prepare_fts_query
+
 
 class NewsDatabase:
     """Manage news releases in SQLite database."""
@@ -279,6 +281,8 @@ class NewsDatabase:
             List of matching news items
         """
         cursor = self.conn.cursor()
+
+        query = prepare_fts_query(query)
 
         hidden_filter = 'AND (news.is_hidden IS NULL OR news.is_hidden = 0)' if not include_hidden else ''
 

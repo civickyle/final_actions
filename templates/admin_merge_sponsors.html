@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Merge Sponsors - Admin</title>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
     <style>
         * {
             margin: 0;
@@ -216,9 +217,9 @@
     </style>
 </head>
 <body>
+{% include '_admin_nav.html' %}
     <header>
         <div class="container">
-            <a href="/admin/sponsors" class="back-link">← Back to Edit Sponsors</a>
             <h1>Merge Sponsor Names</h1>
             <p style="color: #ecf0f1;">Consolidate different variations of the same person's name</p>
         </div>

@@ -8,6 +8,8 @@ Uses SQLite FTS5 to provide fast full-text search across 71K+ legislation PDFs.
 import sqlite3
 import json
 
+from search_utils import prepare_fts_query
+
 
 class LegislationSearchDB:
     """Manage full-text search over OCR-extracted legislation text."""
@@ -95,8 +97,10 @@ class LegislationSearchDB:
         Full-text search with snippet extraction.
 
         sort: 'relevance', 'date_desc', 'date_asc'
+        Phrase search: wrap terms in double quotes, e.g. "city budget"
         Returns list of dicts with metadata and highlighted snippet.
         """
+        query = prepare_fts_query(query)
         cursor = self.conn.cursor()
 
         conditions = []

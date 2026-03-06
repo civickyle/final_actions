@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Error Logs - Admin</title>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
     <style>
         * {
             margin: 0;
@@ -116,10 +117,10 @@
     </style>
 </head>
 <body>
+{% include '_admin_nav.html' %}
     <header>
         <div class="container">
-            <a href="/admin/news" class="back-link">← Back to Admin</a>
-            <h1>📋 Error Logs</h1>
+            <h1>Error Logs</h1>
             <p class="subtitle">Last 500 log entries (newest first)</p>
         </div>
     </header>

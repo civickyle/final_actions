@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Papers - Atlanta City Council</title>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; background: #f5f5f5; }
+        .container { max-width: 960px; margin: 0 auto; padding: 20px; }
+        header { background: #2c3e50; color: white; padding: 2rem 0; margin-bottom: 2rem; }
+        header .container { padding-top: 0; padding-bottom: 0; }
+        .back-link { color: #bdc3c7; text-decoration: none; display: inline-block; margin-bottom: 0.5rem; font-size: 0.9rem; }
+        .back-link:hover { color: white; }
+        h1 { font-size: 1.8rem; margin-bottom: 0.25rem; }
+        .subtitle { color: #bdc3c7; font-size: 0.95rem; }
+
+        .package-list { display: flex; flex-direction: column; gap: 1rem; }
+        .package-card {
+            background: white;
+            border-radius: 8px;
+            padding: 1.25rem 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            text-decoration: none;
+            color: inherit;
+            transition: box-shadow 0.15s;
+        }
+        .package-card:hover { box-shadow: 0 3px 10px rgba(0,0,0,0.12); }
+        .package-meta { display: flex; flex-direction: column; gap: 0.2rem; }
+        .package-date { font-size: 1.1rem; font-weight: 600; color: #2c3e50; }
+        .package-filename { font-size: 0.85rem; color: #888; }
+        .package-right { display: flex; align-items: center; gap: 1rem; }
+        .badge {
+            background: #eaf0fb;
+            color: #2c5fad;
+            border-radius: 12px;
+            padding: 0.2rem 0.75rem;
+            font-size: 0.85rem;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+        .badge-pending { background: #fff3cd; color: #856404; }
+        .arrow { color: #aaa; font-size: 1.2rem; }
+
+        .empty { text-align: center; padding: 3rem; color: #888; font-size: 1.1rem; }
+    </style>
+</head>
+<body>
+<header>
+    <div class="container">
+        <a href="/" class="back-link">← Home</a>
+        <h1>Personal Papers</h1>
+        <p class="subtitle">Combined PDFs introduced on the floor at full council meetings</p>
+    </div>
+</header>
+<div class="container">
+    {% if packages %}
+    <div class="package-list">
+        {% for pkg in packages %}
+        <a href="/personal-papers/{{ pkg.id }}" class="package-card">
+            <div class="package-meta">
+                <span class="package-date">
+                    {% if pkg.meeting_date %}
+                        {{ pkg.meeting_date }}
+                    {% else %}
+                        (date unknown)
+                    {% endif %}
+                </span>
+                <span class="package-filename">{{ pkg.filename }}</span>
+            </div>
+            <div class="package-right">
+                {% if pkg.item_count %}
+                    <span class="badge">{{ pkg.item_count }} item{% if pkg.item_count != 1 %}s{% endif %}</span>
+                {% elif not pkg.processed_at %}
+                    <span class="badge badge-pending">pending</span>
+                {% endif %}
+                <span class="arrow">›</span>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty">
+        No packages yet. Run <code>python scrape_personal_papers.py --pdf &lt;file&gt;</code> to add one.
+    </div>
+    {% endif %}
+</div>
+</body>
+</html>

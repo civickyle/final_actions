@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin: Manage News - Atlanta City Council</title>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
     <style>
         * {
             margin: 0;
@@ -279,10 +280,10 @@
     </style>
 </head>
 <body>
+{% include '_admin_nav.html' %}
     <header>
         <div class="container">
-            <a href="/news" class="back-link">← Back to News</a>
-            <h1>⚙️ Admin: Manage News</h1>
+            <h1>Manage News</h1>
             <p class="subtitle">Edit and hide news releases</p>
         </div>
     </header>

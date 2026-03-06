@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Papers {{ pkg.meeting_date or '' }} - Atlanta City Council</title>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; background: #f5f5f5; }
+        .container { max-width: 1100px; margin: 0 auto; padding: 20px; }
+        header { background: #2c3e50; color: white; padding: 2rem 0; margin-bottom: 2rem; }
+        header .container { padding-top: 0; padding-bottom: 0; }
+        .back-link { color: #bdc3c7; text-decoration: none; display: inline-block; margin-bottom: 0.5rem; font-size: 0.9rem; }
+        .back-link:hover { color: white; }
+        h1 { font-size: 1.8rem; margin-bottom: 0.25rem; }
+        .subtitle { color: #bdc3c7; font-size: 0.95rem; }
+        .header-actions { margin-top: 0.75rem; display: flex; gap: 0.75rem; }
+        .btn {
+            display: inline-block;
+            padding: 0.4rem 1rem;
+            border-radius: 5px;
+            font-size: 0.85rem;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .btn-outline { border: 1px solid rgba(255,255,255,0.4); color: white; }
+        .btn-outline:hover { background: rgba(255,255,255,0.1); }
+
+        table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+        thead { background: #2c3e50; color: white; }
+        thead th { padding: 0.75rem 1rem; text-align: left; font-size: 0.85rem; font-weight: 600; letter-spacing: 0.03em; }
+        tbody tr { border-bottom: 1px solid #eee; }
+        tbody tr:last-child { border-bottom: none; }
+        tbody tr:hover { background: #f8f9fa; }
+        td { padding: 0.75rem 1rem; font-size: 0.9rem; vertical-align: top; }
+        .td-num { color: #999; font-size: 0.8rem; width: 36px; }
+        .td-legid { font-family: monospace; font-size: 0.85rem; white-space: nowrap; color: #2c5fad; }
+        .td-sponsor { white-space: nowrap; }
+        .td-description { }
+        .td-type { white-space: nowrap; font-size: 0.82rem; }
+        .td-committee { font-size: 0.82rem; color: #666; }
+        .td-pdf { white-space: nowrap; }
+        .pdf-link { font-size: 0.82rem; color: #2c5fad; text-decoration: none; }
+        .pdf-link:hover { text-decoration: underline; }
+        .badge-res { background: #e8f4fd; color: #1a6fa8; padding: 0.15rem 0.5rem; border-radius: 10px; font-size: 0.78rem; }
+        .badge-ord { background: #fef3e2; color: #9a5700; padding: 0.15rem 0.5rem; border-radius: 10px; font-size: 0.78rem; }
+        .no-items { text-align: center; padding: 2rem; color: #888; }
+    </style>
+</head>
+<body>
+<header>
+    <div class="container">
+        <a href="/personal-papers" class="back-link">← Personal Papers</a>
+        <h1>{{ pkg.meeting_date or 'Personal Papers' }}</h1>
+        <p class="subtitle">{{ pkg.filename }}  ·  {{ items|length }} item{% if items|length != 1 %}s{% endif %}</p>
+        <div class="header-actions">
+            {% if pkg.toc_pdf_path %}
+            <a href="/personal-papers/{{ pkg.id }}/toc" class="btn btn-outline" target="_blank">📋 Summary / TOC</a>
+            {% endif %}
+            <a href="/personal-papers/{{ pkg.id }}/pdf" class="btn btn-outline" target="_blank">⬇ Full PDF</a>
+        </div>
+    </div>
+</header>
+<div class="container">
+    {% if items %}
+    <table>
+        <thead>
+            <tr>
+                <th class="td-num">#</th>
+                <th>Legislation ID</th>
+                <th>Sponsor</th>
+                <th>Description</th>
+                <th>Type</th>
+                <th>Committee</th>
+                <th>PDF</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr>
+                <td class="td-num">{{ item.row_num }}</td>
+                <td class="td-legid">{{ item.leg_id or item.elms_id }}</td>
+                <td class="td-sponsor">{{ item.sponsor }}</td>
+                <td class="td-description">{{ item.description }}</td>
+                <td class="td-type">
+                    {% if item.leg_type == 'Resolution' %}
+                        <span class="badge-res">Resolution</span>
+                    {% elif item.leg_type == 'Ordinance' %}
+                        <span class="badge-ord">Ordinance</span>
+                    {% else %}
+                        {{ item.leg_type }}
+                    {% endif %}
+                </td>
+                <td class="td-committee">{{ item.committee }}</td>
+                <td class="td-pdf">
+                    {% if item.pdf_path %}
+                    <a href="/personal-papers/items/{{ item.id }}/pdf" class="pdf-link" target="_blank">PDF ↗</a>
+                    {% else %}
+                    —
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="no-items">No items found. The package may not have been processed yet.</div>
+    {% endif %}
+</div>
+</body>
+</html>

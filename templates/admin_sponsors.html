@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edit Sponsors - Admin</title>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css">
     <style>
         * {
@@ -533,10 +534,10 @@
     </style>
 </head>
 <body>
+{% include '_admin_nav.html' %}
     <header>
         <div class="container">
-            <a href="/" class="back-link">← Back to Home</a>
-            <h1>Edit Sponsors & Committees (Admin)</h1>
+            <h1>Edit Sponsors & Committees</h1>
             <p style="color: #ecf0f1;">Manage sponsor information and committee records</p>
             <p style="margin-top: 0.5rem;"><a href="/admin/merge-sponsors" style="color: #ecf0f1; text-decoration: underline;">🔗 Merge Sponsor Variations</a></p>
         </div>
